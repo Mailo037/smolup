@@ -10,7 +10,7 @@ import { run } from '../src/process.js';
 
 const directory = fileURLToPath(new URL('../.test-output/split-media/', import.meta.url));
 await mkdir(directory, { recursive: true });
-process.env.SMUP_HOME = path.join(directory, 'home');
+process.env.SMOP_HOME = path.join(directory, 'home');
 const tools = await mediaTools();
 const source = path.join(directory, 'synthetic-95s.mp4');
 const generated = await run(tools.ffmpeg, ['-hide_banner', '-loglevel', 'error', '-y',

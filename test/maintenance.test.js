@@ -18,7 +18,7 @@ const json = (body, status = 200) => new Response(JSON.stringify(body), { status
 const npm = { file: '/node-executable', args: ['/npm/npm-cli.js'] };
 
 async function temporary(t) {
-  const directory = await mkdtemp(path.join(os.tmpdir(), 'smup-maintenance-'));
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'smop-maintenance-'));
   assert.equal(path.dirname(directory), path.resolve(os.tmpdir()));
   t.after(() => rm(directory, { recursive: true, force: true }));
   return directory;
@@ -145,7 +145,8 @@ test('a genuine global update installs an exact verified version and strips Smol
     return { code: 0, stdout: 'installed', stderr: '' };
   };
   const result = await updatePackage({ check: async () => checked(), runImpl, npmCommand: npm, directory,
-    env: { PATH: '/bin', SMUP_COOKIE: 'private', smup_cookie_file: '/secret', sMuP_CoOkIe: 'private-too' } });
+    env: { PATH: '/bin', SMOP_COOKIE: 'private', smop_cookie_file: '/secret', sMoP_CoOkIe: 'private-too',
+      SMUP_COOKIE: 'legacy-private', smup_cookie_file: '/legacy-secret', sMuP_CoOkIe: 'legacy-private-too' } });
   assert.equal(result.status, 'updated');
   assert.equal(result.installed, '1.0.0');
   assert.equal(result.previousInstalled, VERSION);
@@ -211,9 +212,16 @@ test('maintenance argument syntax rejects misplaced flags and preserves help col
 });
 
 test('maintenance CLI commands work without a Smolish login and produce clean structured output', async t => {
-  const directory = await temporary(t), previous = process.env.SMUP_HOME;
-  process.env.SMUP_HOME = directory;
-  t.after(() => { if (previous === undefined) delete process.env.SMUP_HOME; else process.env.SMUP_HOME = previous; });
+  const directory = await temporary(t);
+  const names = ['SMOP_HOME', 'SMOP_CONFIG', 'SMOP_COOKIE', 'SMOP_COOKIE_FILE', 'SMUP_HOME', 'SMUP_CONFIG', 'SMUP_COOKIE', 'SMUP_COOKIE_FILE'];
+  const previous = Object.fromEntries(names.map(name => [name, process.env[name]]));
+  for (const name of names) delete process.env[name];
+  process.env.SMOP_HOME = directory;
+  t.after(() => {
+    for (const [name, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[name]; else process.env[name] = value;
+    }
+  });
   const invoke = async (args, extra = {}) => {
     let output = '', errors = '';
     const code = await main([...args, '--json'], {

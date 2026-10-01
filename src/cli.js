@@ -105,7 +105,7 @@ function render(terminal, command, data) {
     terminal.label('Batch job', data.jobId);
     terminal.table(['Part', 'Visibility', 'Title', data.status === 'prepared' ? 'Prepared file' : 'Video'], data.items.map((item, i) =>
       [i + 1, item.visibility ?? item.metadata?.visibility, visibleTitle(item.title ?? item.metadata?.title), item.url || item.file]));
-    if (data.status === 'prepared') terminal.output(`Upload all clips: smup resume ${data.jobId}`);
+    if (data.status === 'prepared') terminal.output(`Upload all clips: smop resume ${data.jobId}`);
   } else if (command === 'upload' || command === 'resume') {
     terminal.output(data.status === 'prepared' ? 'Video prepared.' : 'Video uploaded.', 'success');
     terminal.label('Job', data.jobId);
@@ -114,7 +114,7 @@ function render(terminal, command, data) {
     if (data.file) terminal.label('Prepared file', data.file);
     if (data.output) terminal.label('Saved copy', data.output);
     if (data.url) terminal.output(data.url, 'success');
-    if (data.status === 'prepared') terminal.output(`Upload: smup resume ${data.jobId}`);
+    if (data.status === 'prepared') terminal.output(`Upload: smop resume ${data.jobId}`);
   } else if (command === 'storage') {
     terminal.label('Tier', data.storage.label, 'title');
     terminal.label('Storage', `${formatSize(data.storage.usedBytes)} / ${formatSize(data.storage.quotaBytes)}`);
@@ -305,7 +305,7 @@ export async function main(args = process.argv.slice(2), dependencies = {}) {
       for (const name of ['ytDlp', 'ffmpeg', 'ffprobe']) {
         const damaged = name === 'ytDlp' && backend[name].present && ['managed', 'installed'].includes(backend[name].source) && !backend[name].verified;
         checks.push({ name, status: damaged ? 'failed' : backend[name].present ? 'ok' : 'pending',
-          detail: damaged ? 'Cached tool failed verification. Run smup doctorfix.' : backend[name].path || 'Installed automatically on first use' });
+          detail: damaged ? 'Cached tool failed verification. Run smop doctorfix.' : backend[name].path || 'Installed automatically on first use' });
       }
       for (const error of backend.errors) checks.push({ name: 'VEO', status: 'failed', detail: error });
       if (options.online && credentials) {
@@ -321,7 +321,7 @@ export async function main(args = process.argv.slice(2), dependencies = {}) {
       return ready ? 0 : 1;
     }
     if (options.command === 'setup') {
-      if (options.json) throw new Error('Cookie setup requires an interactive terminal. Use SMUP_COOKIE_FILE and whoami --json for automation.');
+      if (options.json) throw new Error('Cookie setup requires an interactive terminal. Use SMOP_COOKIE_FILE and whoami --json for automation.');
       await (dependencies.setupAuth || setupAuth)({ color, forceColor: options.overrides.color === true, signal,
         prompt: terminal.prompt('Smolish Cookie header (input hidden): ') });
       const { user } = await authenticate();
@@ -358,7 +358,7 @@ export async function main(args = process.argv.slice(2), dependencies = {}) {
     }
     const selectedMetadata = () => {
       if (!options.preset || options.preset === 'none') return metadataOverrides(options.overrides);
-      if (!Object.hasOwn(config.presets, options.preset)) throw new Error(`Unknown preset "${options.preset}". Run smup preset list.`);
+      if (!Object.hasOwn(config.presets, options.preset)) throw new Error(`Unknown preset "${options.preset}". Run smop preset list.`);
       return metadataOverrides({ ...config.presets[options.preset], ...options.overrides });
     };
     if (options.command === 'edit') {
@@ -406,9 +406,9 @@ export async function main(args = process.argv.slice(2), dependencies = {}) {
     const message = cancelled ? 'Cancelled.' : error.message;
     terminal ||= createTerminal({ json: options?.json || args.includes('--json'), color: !args.includes('--no-color'), forceColor: args.includes('--color'), stdout, stderr });
     terminal.error(message);
-    if (job?.videoId) terminal.say(`Resume: smup resume ${job.id}\nStudio: https://smolish.com/studio/video/${job.videoId}`);
+    if (job?.videoId) terminal.say(`Resume: smop resume ${job.id}\nStudio: https://smolish.com/studio/video/${job.videoId}`);
     else if (['creation-uncertain', 'creating'].includes(job?.stage)) terminal.say('A draft may already exist. Check Smolish Studio before another upload.');
-    else if (job?.stage === 'prepared' || job?.kind === 'batch' && job.stage !== 'preparing') terminal.say(`Resume: smup resume ${job.id}`);
+    else if (job?.stage === 'prepared' || job?.kind === 'batch' && job.stage !== 'preparing') terminal.say(`Resume: smop resume ${job.id}`);
     if (options?.json || args.includes('--json')) terminal.json({ command: options?.command || null, status: 'failed', error: message,
       jobId: job?.id || null, videoId: job?.videoId || null, ...(error.quota ? { quota: error.quota } : {}) });
     return cancelled ? 130 : 1;

@@ -1,20 +1,24 @@
-# smup automation guide
+# smop automation guide
 
 Use the CLI's `--json` mode for automation. Invoke the command with an argument array; avoid building a shell command from video URLs, titles or paths. Progress is written to stderr and results are written to stdout. Most commands return one JSON object. `watchdog start --json` writes newline-delimited events followed by a final result.
 
+Install the npm package `smop` and invoke `smop`. The built-in aliases `smush` and legacy `smup` forward to the same CLI.
+
 ## Authentication and preflight
 
-Configure credentials locally with interactive `smup setup`, or provide a Cookie header through `SMUP_COOKIE_FILE` or `SMUP_COOKIE`. Cookie values are never CLI arguments. Do not include credentials in source URLs, logs, reports or job descriptions.
+Configure credentials locally with interactive `smop setup`, or provide a Cookie header through `SMOP_COOKIE_FILE` or `SMOP_COOKIE`. Cookie values are never CLI arguments. Do not include credentials in source URLs, logs, reports or job descriptions.
+
+Legacy `SMUP_COOKIE` and `SMUP_COOKIE_FILE` remain fallbacks for their corresponding `SMOP_` variables. An environment cookie takes precedence over an environment cookie file; saved credentials are used last.
 
 ```text
-smup doctor --json
-smup whoami --json
-smup doctor --online --json
-smup doctorfix --json
-smup version --json
-smup update --check --json
-smup storage --json
-smup storage --bytes 104857600 --json
+smop doctor --json
+smop whoami --json
+smop doctor --online --json
+smop doctorfix --json
+smop version --json
+smop update --check --json
+smop storage --json
+smop storage --bytes 104857600 --json
 ```
 
 `doctor` is a local diagnostic command unless `--online` is supplied. It reports missing credentials and invalid config with exit code 1. Media tools awaiting automatic installation have status `pending` and do not by themselves make the setup fail. `whoami` checks the current session. An authenticated live upload has not yet been verified; Smolish's internal website endpoints may change.
@@ -30,11 +34,11 @@ Quota excess or unavailable counters stop JSON and non-interactive uploads with 
 ## Prepare, upload and resume
 
 ```text
-smup https://example.com/video --dry-run --json
-smup https://example.com/video --visibility private --rename "A clip" --duration 30 --json
-smup https://example.com/video --split --rename "{filename} Part {part} of {parts}" --json
-smup resume JOB_ID --json
-smup jobs --json
+smop https://example.com/video --dry-run --json
+smop https://example.com/video --visibility private --rename "A clip" --duration 30 --json
+smop https://example.com/video --split --rename "{filename} Part {part} of {parts}" --json
+smop resume JOB_ID --json
+smop jobs --json
 ```
 
 An invocation handles one source. Duration must be greater than zero and at most 60 seconds. `--start` chooses the beginning of the clip. `--quality` selects the VEO download quality. `--output` preserves an additional local copy of each prepared clip.
@@ -52,9 +56,9 @@ After an interrupted transfer, resume the same job. Uploaded parts are checked r
 ## Split jobs and title templates
 
 ```text
-smup SOURCE --split --split-threshold 90 --duration 60 --rename "{filename} Part {part} of {parts}" --json
-smup SOURCE --split --part-label suffix --dry-run --json
-smup resume BATCH_JOB_ID --json
+smop SOURCE --split --split-threshold 90 --duration 60 --rename "{filename} Part {part} of {parts}" --json
+smop SOURCE --split --part-label suffix --dry-run --json
+smop resume BATCH_JOB_ID --json
 ```
 
 `--split` produces consecutive planned clips when the source remaining after `--start` is at least `--split-threshold` seconds. The threshold must be at least 60 seconds. Below it, one clip is prepared as usual. Each clip uses `--duration`, and the final clip may be shorter. Split link uploads download the source before local cutting. All clips are prepared before the aggregate quota check and before creating new drafts.
@@ -76,16 +80,16 @@ A multi-clip source produces a parent batch job and child upload jobs. Persist t
 ## Folder watchdogs
 
 ```text
-smup watchdog add clips C:\Videos\Inbox --split --rename "{filename} Part {part} of {parts}" --json
-smup watchdog add C:\Videos\Archive --name archive --recursive --existing --json
-smup watchdog list --json
-smup watchdog show clips --json
-smup watchdog start clips --json
-smup watchdog status clips --json
-smup watchdog stop clips --json
-smup watchdog retry clips --json
-smup watchdog retry clips C:\Videos\Inbox\blocked.mp4 --json
-smup watchdog remove clips --json
+smop watchdog add clips C:\Videos\Inbox --split --rename "{filename} Part {part} of {parts}" --json
+smop watchdog add C:\Videos\Archive --name archive --recursive --existing --json
+smop watchdog list --json
+smop watchdog show clips --json
+smop watchdog start clips --json
+smop watchdog status clips --json
+smop watchdog stop clips --json
+smop watchdog retry clips --json
+smop watchdog retry clips C:\Videos\Inbox\blocked.mp4 --json
+smop watchdog remove clips --json
 ```
 
 `watch` is a command synonym. Adding a watchdog snapshots resolved defaults, presets and flags. Its saved upload settings are unchanged by later config edits. By default, files present at add time are skipped. Use `--existing` to include them or `--recursive` to include subfolders. `--interval` is the polling delay in seconds (default 5), and `--stable` is the required unchanged interval (default 10). Upload settings and these flags are accepted by `watchdog add`.
@@ -99,23 +103,23 @@ A persistent journal stores hashes, counters, job IDs and server video IDs. Rest
 ## Read account videos
 
 ```text
-smup list private --all --json
-smup list public --sort views --order desc --limit 30 --page 1 --json
-smup list --status ready --json
-smup info VIDEO_ID --json
-smup analytics VIDEO_ID --days 28 --json
-smup analytics --days 7 --json
+smop list private --all --json
+smop list public --sort views --order desc --limit 30 --page 1 --json
+smop list --status ready --json
+smop info VIDEO_ID --json
+smop analytics VIDEO_ID --days 28 --json
+smop analytics --days 7 --json
 ```
 
-`list` reads the Smolish account, including uploads made outside smup. `jobs` reads local upload history. Filters support visibility `private`, `public` or `unlisted`; status `draft`, `uploading`, `queued`, `processing`, `ready` or `failed`; sort `date`, `views`, `likes` or `comments`; and order `asc` or `desc`.
+`list` reads the Smolish account, including uploads made outside smop. `jobs` reads local upload history. Filters support visibility `private`, `public` or `unlisted`; status `draft`, `uploading`, `queued`, `processing`, `ready` or `failed`; sort `date`, `views`, `likes` or `comments`; and order `asc` or `desc`.
 
 `--limit` ranges from 1 to 50 for account lists. `--all` starts at page 1 and fetches pages sequentially. Analytics accepts 7, 28 or 90 days and returns the site's analytics payload; consumers should tolerate additional site fields.
 
 ## Change metadata
 
 ```text
-smup edit VIDEO_ID --visibility public --json
-smup edit VIDEO_ID --rename "Revised title" --description "Revised description" --json
+smop edit VIDEO_ID --visibility public --json
+smop edit VIDEO_ID --rename "Revised title" --description "Revised description" --json
 ```
 
 Only requested metadata is changed. An edit is confirmed against the server before success is reported. A title is limited to 100 characters on one line; a description is limited to 2,000 characters.
@@ -184,7 +188,7 @@ The example is illustrative. IDs are **strings** and must remain strings. Missin
 
 Upload results include the local job ID and confirmed video information. Dry-run results include the job ID and prepared file. Persist the job ID to resume the same upload. Ignore unknown fields within schema version 1 so compatible additions do not break a consumer.
 
-JSON errors contain `status: "failed"`, `error`, `jobId` and `videoId`. IDs are `null` when no job or video was created; `command` is `null` if argument parsing failed. `doctor` uses its diagnostic `attention` result when checks fail. Exit codes are `0` for success, `1` for errors and `130` for interruption. A failed upload can leave a resumable job; use the returned job information or `smup jobs --json` to inspect it.
+JSON errors contain `status: "failed"`, `error`, `jobId` and `videoId`. IDs are `null` when no job or video was created; `command` is `null` if argument parsing failed. `doctor` uses its diagnostic `attention` result when checks fail. Exit codes are `0` for success, `1` for errors and `130` for interruption. A failed upload can leave a resumable job; use the returned job information or `smop jobs --json` to inspect it.
 
 ## Watchdog event stream
 
@@ -207,23 +211,25 @@ Watchdog list/status results include `globalReservedClips` and a `watchdogs` arr
 ## Local settings and aliases
 
 ```text
-smup config show --json
-smup config set visibility private --json
-smup config set duration 30 --json
-smup config set split true --json
-smup config set splitThreshold 90 --json
-smup config set partLabel prefix --json
-smup preset add shorts --visibility public --duration 30 --json
-smup preset show shorts --json
-smup preset use shorts --json
-smup preset reset --json
-smup alias add smap --json
-smup alias list --json
-smup alias remove smap --json
+smop config show --json
+smop config set visibility private --json
+smop config set duration 30 --json
+smop config set split true --json
+smop config set splitThreshold 90 --json
+smop config set partLabel prefix --json
+smop preset add shorts --visibility public --duration 30 --json
+smop preset show shorts --json
+smop preset use shorts --json
+smop preset reset --json
+smop alias add smap --json
+smop alias list --json
+smop alias remove smap --json
 ```
 
-Configuration commands do not need authentication. Presets store partial settings. Command aliases forward arguments to smup; they are not presets. Alias management does not overwrite existing commands or remove unrelated files. Use `--bin-dir` to choose a different command directory.
+Configuration commands do not need authentication. Presets store partial settings. Command aliases forward arguments to smop; they are not presets. Alias management does not overwrite existing commands or remove unrelated files. Use `--bin-dir` to choose a different command directory.
 
-`SMUP_HOME` relocates config and authentication and puts jobs under `state/jobs`. `SMUP_CONFIG` overrides only the settings file path. Config and job files contain user settings and media paths; authentication is stored separately. Use `smup config path --json` to discover the effective config location.
+`SMOP_HOME` relocates config and authentication and puts jobs under `state/jobs`. `SMOP_CONFIG` overrides only the settings file path. Config and job files contain user settings and media paths; authentication is stored separately. Use `smop config path --json` to discover the effective config location.
 
-Watchdog definitions are stored in the config directory's `watchdogs.json`; the persistent upload journal is in the state directory under `watchdogs`. `SMUP_CONFIG` changes the general settings file only, while `SMUP_HOME` also relocates watchdog definitions and state. Keep those files when restarting or migrating a runner to preserve deduplication and ordinal assignments.
+Legacy `SMUP_HOME` and `SMUP_CONFIG` remain fallbacks for their corresponding `SMOP_` variables. Default paths use `smop` directories. If a corresponding new directory does not exist, its existing `smup` directory is reused without moving files. Use the returned effective paths rather than assuming a directory name.
+
+Watchdog definitions are stored in the config directory's `watchdogs.json`; the persistent upload journal is in the state directory under `watchdogs`. `SMOP_CONFIG` changes the general settings file only, while `SMOP_HOME` also relocates watchdog definitions and state. Keep those files when restarting or migrating a runner to preserve deduplication and ordinal assignments.

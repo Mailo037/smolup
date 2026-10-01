@@ -12,11 +12,11 @@ function stream(isTTY = false) {
   return { isTTY, columns: 180, write(value) { chunks.push(String(value)); }, get text() { return chunks.join(''); } };
 }
 async function isolated(t) {
-  const directory = await mkdtemp(path.join(os.tmpdir(), 'smup-commands-'));
-  const names = ['SMUP_HOME', 'SMUP_CONFIG', 'SMUP_COOKIE', 'SMUP_COOKIE_FILE', 'EDITOR', 'VISUAL'];
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'smop-commands-'));
+  const names = ['SMOP_HOME', 'SMOP_CONFIG', 'SMOP_COOKIE', 'SMOP_COOKIE_FILE', 'SMUP_HOME', 'SMUP_CONFIG', 'SMUP_COOKIE', 'SMUP_COOKIE_FILE', 'EDITOR', 'VISUAL'];
   const previous = Object.fromEntries(names.map(name => [name, process.env[name]]));
   for (const name of names) delete process.env[name];
-  process.env.SMUP_HOME = directory;
+  process.env.SMOP_HOME = directory;
   t.after(async () => {
     for (const [name, value] of Object.entries(previous)) {
       if (value === undefined) delete process.env[name]; else process.env[name] = value;
@@ -42,12 +42,12 @@ test('every command and documented synonym has non-mutating clean JSON help', as
     const output = await invoke([command, '--help']);
     assert.equal(output.code, 0, command);
     assert.equal(output.data.command, 'help');
-    assert.match(output.data.text, /smup/);
+    assert.match(output.data.text, /smop/);
   }
   assert.equal((await invoke(['doctor', 'fix', '--help'])).code, 0);
   const globalHelp = await invoke(['--help']);
   assert.match(globalHelp.data.text, /Account and videos:/);
-  assert.match(globalHelp.data.text, /smup update \[--check\]/);
+  assert.match(globalHelp.data.text, /smop update \[--check\]/);
 });
 
 test('config, presets and aliases complete their command lifecycle through the CLI', async t => {
@@ -62,7 +62,7 @@ test('config, presets and aliases complete their command lifecycle through the C
     ['alias', 'list', '--bin-dir', bins], ['alias', 'remove', 'clipgo', '--bin-dir', bins], ['config', 'reset'], ['jobs'],
   ];
   for (const args of commands) assert.equal((await invoke(args)).code, 0, args.join(' '));
-  assert.equal((await invoke(['alias', 'add', 'smup', '--bin-dir', bins])).code, 1);
+  assert.equal((await invoke(['alias', 'add', 'smop', '--bin-dir', bins])).code, 1);
 });
 
 test('watchdog registration, queries, stop, remove and invalid retry use isolated state', async t => {
@@ -130,7 +130,7 @@ test('account commands without authentication fail cleanly and do not begin a tr
   for (const args of [['whoami'], ['list'], ['storage'], ['info', '123'], ['analytics'], ['edit', '123', '-r', 'Name'], ['resume', 'abc123']]) {
     const output = await invoke(args);
     assert.equal(output.code, 1, args.join(' '));
-    assert.match(output.data.error, /smup setup/);
+    assert.match(output.data.error, /smop setup/);
   }
   const invalid = await invoke(['list', '--unknown']);
   assert.equal(invalid.code, 1);

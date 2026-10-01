@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
-import { PACKAGE_NAME, VERSION } from './identity.js';
+import { PACKAGE_NAME, VERSION, COMMAND } from './identity.js';
 import { run } from './process.js';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
@@ -16,9 +16,9 @@ export async function repairDependency(signal) {
   const env = { ...process.env };
   // npm run/npx can forward persistent script policy as a rejected env override.
   // This repair blocks every lifecycle script explicitly with --ignore-scripts.
-  for (const key of Object.keys(env)) if (/^smup_cookie(?:_file)?$|^npm_config_allow_scripts$/i.test(key)) delete env[key];
+  for (const key of Object.keys(env)) if (/^(?:smop|smup)_cookie(?:_file)?$|^npm_config_allow_scripts$/i.test(key)) delete env[key];
   const result = await run(npm.file, [...npm.args, 'install', '--global=false', '--prefix', root, '--omit=dev', '--ignore-scripts', '--no-audit', '--no-fund'], { signal, env });
-  if (result.code !== 0) throw new Error('VEO dependency installation failed. Run npm install in the smup installation directory, then retry smup doctorfix.');
+  if (result.code !== 0) throw new Error('VEO dependency installation failed. Run npm install in the smop installation directory, then retry smop doctorfix.');
 }
 
 export async function launch(args = process.argv.slice(2), dependencies = {}) {
@@ -36,7 +36,7 @@ export async function launch(args = process.argv.slice(2), dependencies = {}) {
   try {
     if (!(await (dependencies.hasVeo || hasVeo)())) {
       if (args.some(arg => ['--version', '-v'].includes(arg))) {
-        stdout.write(json ? `${JSON.stringify({ schemaVersion: 1, command: 'version', status: 'ok', version: VERSION })}\n` : `${paint(`${PACKAGE_NAME} ${VERSION}`)}\n`);
+        stdout.write(json ? `${JSON.stringify({ schemaVersion: 1, command: 'version', status: 'ok', version: VERSION })}\n` : `${paint(`${COMMAND} ${VERSION}`)}\n`);
         return 0;
       }
       if (!args.length || args.some(arg => ['--help', '-h'].includes(arg)) || args[0] === 'help') {
@@ -48,11 +48,11 @@ export async function launch(args = process.argv.slice(2), dependencies = {}) {
       const repair = args[0] === 'doctorfix' || args[0] === 'doctor' && args[1] === 'fix';
       const extra = args.slice(args[1] === 'fix' ? 2 : 1);
       if (!repair || extra.some(arg => !['--json', '--color', '--no-color', '--online'].includes(arg)) || args.includes('--color') && args.includes('--no-color')) {
-        throw new Error('The VEO dependency is missing. Run smup doctorfix to install it.');
+        throw new Error('The VEO dependency is missing. Run smop doctorfix to install it.');
       }
       stderr.write(`${paint('Installing the pinned VEO dependency…')}\n`);
       await (dependencies.repair || repairDependency)(controller.signal);
-      if (!(await (dependencies.hasVeo || hasVeo)())) throw new Error('VEO is still unavailable. Reinstall smup with npm install --global smup@latest.');
+      if (!(await (dependencies.hasVeo || hasVeo)())) throw new Error(`VEO is still unavailable. Reinstall ${COMMAND} with npm install --global ${PACKAGE_NAME}@latest.`);
       stderr.write(`${paint('VEO dependency installed.', 32)}\n`);
     }
     // Drop the bootstrap signal handlers before main owns cancellation.
@@ -62,7 +62,7 @@ export async function launch(args = process.argv.slice(2), dependencies = {}) {
     return await module.main(args, { stdout, stderr });
   } catch (error) {
     const message = controller.signal.aborted ? 'Cancelled.' : error.message;
-    stderr.write(`${paint(`smup: ${message}`, 31)}\n`);
+    stderr.write(`${paint(`smop: ${message}`, 31)}\n`);
     if (json) stdout.write(`${JSON.stringify({ schemaVersion: 1, command: args[0] || null, status: 'failed', error: message })}\n`);
     return controller.signal.aborted ? 130 : 1;
   } finally {

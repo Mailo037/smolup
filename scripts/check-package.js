@@ -6,17 +6,17 @@ import { createRequire } from 'node:module';
 import { mkdtemp, mkdir, readFile, realpath, rename, rm } from 'node:fs/promises';
 import { npmInvocation } from '../src/maintenance.js';
 import { run } from '../src/process.js';
-import { VERSION } from '../src/identity.js';
+import { PACKAGE_NAME, VERSION, COMMAND } from '../src/identity.js';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const temporaryRoot = await realpath(os.tmpdir());
-const directory = await realpath(await mkdtemp(path.join(temporaryRoot, 'smup-package-')));
+const directory = await realpath(await mkdtemp(path.join(temporaryRoot, 'smop-package-')));
 assert.equal(path.dirname(directory), temporaryRoot);
 const prefix = path.join(directory, 'install with spaces');
 const home = path.join(directory, 'home');
 const npm = await npmInvocation();
-const env = { ...process.env, SMUP_HOME: home };
-for (const key of Object.keys(env)) if (/^smup_(?:cookie(?:_file)?|config)$|^npm_config_allow_scripts$/i.test(key)) delete env[key];
+const env = { ...process.env, SMOP_HOME: home };
+for (const key of Object.keys(env)) if (/^(?:smop|smup)_(?:cookie(?:_file)?|config)$|^npm_config_allow_scripts$/i.test(key)) delete env[key];
 const callNpm = async args => {
   const result = await run(npm.file, [...npm.args, ...args], { env, signal: AbortSignal.timeout(180_000) });
   assert.equal(result.code, 0, `npm ${args[0]} failed: ${result.stderr.slice(-2000)}`);
@@ -25,14 +25,14 @@ const callNpm = async args => {
 try {
   await mkdir(prefix);
   const packed = JSON.parse((await callNpm(['pack', root, '--pack-destination', directory, '--json', '--ignore-scripts'])).stdout)[0];
-  assert.equal(packed.name, 'smup');
+  assert.equal(packed.name, PACKAGE_NAME);
   assert.equal(packed.version, VERSION);
   const files = packed.files.map(file => file.path);
-  for (const required of ['bin/smup.js', 'src/bootstrap.js', 'src/maintenance.js', 'LICENSE', 'docs/PUBLISHING.md']) assert.ok(files.includes(required), required);
+  for (const required of ['bin/smop.js', 'src/bootstrap.js', 'src/maintenance.js', 'LICENSE', 'docs/PUBLISHING.md']) assert.ok(files.includes(required), required);
   for (const file of files) assert.doesNotMatch(file, /(?:^|\/)(?:auth\.json|\.npmrc|\.env[^/]*|node_modules|\.reference|\.test-output|test|state)(?:\/|$)|\.(?:mp4|mov|webm|mkv|log|tmp)$/i);
   await callNpm(['install', '--global=false', '--prefix', prefix, path.join(directory, packed.filename), '--omit=optional', '--ignore-scripts', '--no-audit', '--no-fund']);
-  const installed = path.join(prefix, 'node_modules', 'smup');
-  const cli = path.join(installed, 'bin', 'smup.js');
+  const installed = path.join(prefix, 'node_modules', ...PACKAGE_NAME.split('/'));
+  const cli = path.join(installed, 'bin', 'smop.js');
   const execute = args => run(process.execPath, [cli, ...args], { env, signal: AbortSignal.timeout(180_000) });
   const json = async (args, expected = 0) => {
     const result = await execute([...args, '--json']);
@@ -41,6 +41,7 @@ try {
     return JSON.parse(result.stdout);
   };
   assert.equal((await json(['--version'])).version, VERSION);
+  assert.equal((await execute(['--version', '--no-color'])).stdout.trim(), `${COMMAND} ${VERSION}`);
   assert.equal((await json(['config', 'set', 'visibility', 'private'])).status, 'updated');
   assert.equal((await json(['preset', 'add', 'shorts', '--duration', '30'])).status, 'added');
   assert.equal((await json(['jobs'])).jobs.length, 0);
@@ -63,17 +64,18 @@ try {
   assert.ok(relative && !relative.startsWith('..') && !path.isAbsolute(relative), 'dependency must be within the test installation');
   await rename(veoDirectory, `${veoDirectory}.fixture-hidden`);
   assert.equal((await json(['--version'])).version, VERSION);
+  assert.equal((await execute(['--version', '--no-color'])).stdout.trim(), `${COMMAND} ${VERSION}`);
   assert.equal((await json(['doctorfix', '--help'])).status, 'ok');
   assert.match((await json(['jobs'], 1)).error, /dependency is missing/);
   const repaired = await json(['doctorfix']);
   assert.equal(repaired.status, 'repaired');
   assert.equal(repaired.ready, true);
   assert.equal((await json(['jobs', prepared.jobId])).job.id, prepared.jobId);
-  assert.equal(JSON.parse(await readFile(path.join(installed, 'package.json'), 'utf8')).name, 'smup');
-  console.log(JSON.stringify({ status: 'passed', package: 'smup', version: VERSION, files: files.length,
+  assert.equal(JSON.parse(await readFile(path.join(installed, 'package.json'), 'utf8')).name, PACKAGE_NAME);
+  console.log(JSON.stringify({ status: 'passed', package: PACKAGE_NAME, version: VERSION, files: files.length,
     installedHelpColors: true, shortJobId: prepared.jobId, missingVeoRepair: true }));
 } finally {
   assert.equal(path.dirname(directory), temporaryRoot);
-  assert.ok(path.basename(directory).startsWith('smup-package-'));
+  assert.ok(path.basename(directory).startsWith('smop-package-'));
   await rm(directory, { recursive: true, force: true });
 }

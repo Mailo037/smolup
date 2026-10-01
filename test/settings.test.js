@@ -17,10 +17,11 @@ async function temporaryDirectory(t, prefix) {
 }
 
 async function temporaryConfig(t) {
-  const directory = await temporaryDirectory(t, 'smup-config-test-');
-  const previous = { SMUP_HOME: process.env.SMUP_HOME, SMUP_CONFIG: process.env.SMUP_CONFIG };
-  process.env.SMUP_HOME = directory;
-  delete process.env.SMUP_CONFIG;
+  const directory = await temporaryDirectory(t, 'smop-config-test-');
+  const names = ['SMOP_HOME', 'SMOP_CONFIG', 'SMUP_HOME', 'SMUP_CONFIG'];
+  const previous = Object.fromEntries(names.map(name => [name, process.env[name]]));
+  for (const name of names) delete process.env[name];
+  process.env.SMOP_HOME = directory;
   t.after(() => {
     for (const [name, value] of Object.entries(previous)) {
       if (value === undefined) delete process.env[name]; else process.env[name] = value;
@@ -128,14 +129,14 @@ test('CLI filters account lists and validates command-specific flags and conflic
 });
 
 test('aliases create and remove only their managed wrappers in the explicit directory', async t => {
-  const directory = await temporaryDirectory(t, 'smup-alias-test-');
+  const directory = await temporaryDirectory(t, 'smop-alias-test-');
   const options = { binDir: directory, platform: 'win32' };
   const added = await aliasCommand(['add', 'smap'], options);
   assert.equal(added.status, 'added');
   assert.equal(added.paths.length, 3);
   for (const file of added.paths) {
     assert.equal(path.dirname(file), directory);
-    assert.match(await readFile(file, 'utf8'), /smup-managed-alias-v1/);
+    assert.match(await readFile(file, 'utf8'), /smop-managed-alias-v1/);
   }
   const listed = await aliasCommand(['list'], options);
   assert.equal(listed.aliases.find(item => item.name === 'smap').builtin, false);
@@ -146,9 +147,9 @@ test('aliases create and remove only their managed wrappers in the explicit dire
 });
 
 test('alias management protects built-ins, unrelated commands, and an alias with one replaced wrapper', async t => {
-  const directory = await temporaryDirectory(t, 'smup-alias-protect-test-');
+  const directory = await temporaryDirectory(t, 'smop-alias-protect-test-');
   const options = { binDir: directory, platform: 'win32' };
-  for (const name of ['smup', 'smush']) {
+  for (const name of ['smop', 'smush', 'smup']) {
     await assert.rejects(aliasCommand(['add', name], options), /built-in/);
     await assert.rejects(aliasCommand(['remove', name], options), /built-in/);
   }
@@ -163,6 +164,18 @@ test('alias management protects built-ins, unrelated commands, and an alias with
   for (const file of added.paths) await access(file);
   assert.equal(await readFile(replacedFile, 'utf8'), 'unrelated replacement');
   await assert.rejects(aliasCommand(['add', '../escape'], options), /Alias names/);
+});
+
+test('legacy managed aliases can still be listed and removed after the rename', async t => {
+  const directory = await temporaryDirectory(t, 'smop-legacy-alias-test-');
+  const options = { binDir: directory, platform: 'win32' };
+  const files = ['legacy', 'legacy.cmd', 'legacy.ps1'].map(name => path.join(directory, name));
+  for (const file of files) await writeFile(file, '# smup-managed-alias-v1\n');
+  const listed = await aliasCommand(['list'], options);
+  assert.equal(listed.aliases.find(item => item.name === 'legacy').present, true);
+  assert.equal(listed.aliases.find(item => item.name === 'legacy').builtin, false);
+  await aliasCommand(['remove', 'legacy'], options);
+  for (const file of files) await assert.rejects(access(file), { code: 'ENOENT' });
 });
 
 test('JSON output remains a single uncolored schema record while progress goes to stderr', async () => {
@@ -209,7 +222,7 @@ test('NO_COLOR and explicit color disabling remove color codes from terminal mes
     terminal.error('Problem');
     terminal.close();
     assert.equal(stdout.text, 'Ready\n');
-    assert.equal(stderr.text, 'smup: Problem\n');
+    assert.equal(stderr.text, 'smop: Problem\n');
   }
 });
 test('terminal animation pauses while a confirmation prompt is waiting for input', async () => {

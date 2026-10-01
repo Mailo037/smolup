@@ -13,11 +13,11 @@ const video = extra => ({ id: ID, title: 'Existing title', description: 'Origina
   status: 'ready', durationSeconds: 42, sizeBytes: 500, viewsCount: 12, likesCount: 3, commentsCount: 1, ...extra });
 
 async function isolatedHome(t) {
-  const directory = await mkdtemp(path.join(os.tmpdir(), 'smup-cli-test-'));
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'smop-cli-test-'));
   assert.equal(path.dirname(directory), path.resolve(os.tmpdir()));
-  const names = ['SMUP_HOME', 'SMUP_CONFIG', 'SMUP_COOKIE', 'SMUP_COOKIE_FILE'];
+  const names = ['SMOP_HOME', 'SMOP_CONFIG', 'SMOP_COOKIE', 'SMOP_COOKIE_FILE', 'SMUP_HOME', 'SMUP_CONFIG', 'SMUP_COOKIE', 'SMUP_COOKIE_FILE'];
   const old = Object.fromEntries(names.map(name => [name, process.env[name]]));
-  process.env.SMUP_HOME = directory;
+  process.env.SMOP_HOME = directory;
   for (const name of names.slice(1)) delete process.env[name];
   t.after(async () => {
     for (const [name, value] of Object.entries(old)) {

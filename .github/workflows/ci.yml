@@ -27,7 +27,7 @@ jobs:
       - run: npm pack --dry-run --ignore-scripts
       - name: Repair native media tools
         if: matrix.node == 24
-        run: node bin/smup.js doctorfix --json
+        run: node bin/smop.js doctorfix --json
       - name: Check real media preparation
         if: matrix.node == 24
         run: npm run test:media

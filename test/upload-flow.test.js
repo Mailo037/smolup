@@ -11,11 +11,12 @@ import { watchdogCommand } from '../src/watchdog.js';
 import { parseArgs } from '../src/arguments.js';
 
 async function home(t) {
-  const root = await mkdtemp(path.join(os.tmpdir(), 'smup-flow-test-'));
+  const root = await mkdtemp(path.join(os.tmpdir(), 'smop-flow-test-'));
   assert.equal(path.dirname(root), path.resolve(os.tmpdir()));
-  const names = ['SMUP_HOME', 'SMUP_CONFIG'];
+  const names = ['SMOP_HOME', 'SMOP_CONFIG', 'SMUP_HOME', 'SMUP_CONFIG', 'SMOP_COOKIE', 'SMOP_COOKIE_FILE', 'SMUP_COOKIE', 'SMUP_COOKIE_FILE'];
   const before = names.map(name => process.env[name]);
-  process.env.SMUP_HOME = root; delete process.env.SMUP_CONFIG;
+  for (const name of names) delete process.env[name];
+  process.env.SMOP_HOME = root;
   t.after(async () => {
     names.forEach((name, i) => { if (before[i] === undefined) delete process.env[name]; else process.env[name] = before[i]; });
     await rm(root, { recursive: true, force: true });

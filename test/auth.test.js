@@ -7,11 +7,11 @@ import { authFile } from '../src/paths.js';
 import { normalizeCookie, loadAuth, saveAuth, setupAuth } from '../src/auth.js';
 
 async function isolated(t) {
-  const directory = await mkdtemp(path.join(os.tmpdir(), 'smup-auth-test-'));
-  const names = ['SMUP_HOME', 'SMUP_COOKIE', 'SMUP_COOKIE_FILE'];
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'smop-auth-test-'));
+  const names = ['SMOP_HOME', 'SMOP_COOKIE', 'SMOP_COOKIE_FILE', 'SMUP_HOME', 'SMUP_COOKIE', 'SMUP_COOKIE_FILE'];
   const previous = Object.fromEntries(names.map(name => [name, process.env[name]]));
   for (const name of names) delete process.env[name];
-  process.env.SMUP_HOME = directory;
+  process.env.SMOP_HOME = directory;
   t.after(async () => {
     for (const [name, value] of Object.entries(previous)) {
       if (value === undefined) delete process.env[name]; else process.env[name] = value;
@@ -32,13 +32,31 @@ test('cookie environment and file overrides follow documented priority', async t
   const directory = await isolated(t);
   const file = path.join(directory, 'cookie.txt');
   await writeFile(file, 'Cookie: session=from-file');
-  process.env.SMUP_COOKIE_FILE = file;
-  process.env.SMUP_COOKIE = 'session=from-environment';
+  process.env.SMOP_COOKIE_FILE = file;
+  process.env.SMOP_COOKIE = 'session=from-environment';
   assert.equal((await loadAuth()).cookie, 'session=from-environment');
-  delete process.env.SMUP_COOKIE;
+  delete process.env.SMOP_COOKIE;
   assert.equal((await loadAuth()).cookie, 'session=from-file');
   await writeFile(file, 'malformed');
   await assert.rejects(loadAuth(), /complete/);
+});
+
+test('legacy cookie environment variables still work and current values take priority', async t => {
+  const directory = await isolated(t);
+  const file = path.join(directory, 'legacy-cookie.txt');
+  await writeFile(file, 'session=legacy-file');
+  process.env.SMUP_COOKIE_FILE = file;
+  assert.equal((await loadAuth()).cookie, 'session=legacy-file');
+  process.env.SMUP_COOKIE = 'session=legacy-inline';
+  assert.equal((await loadAuth()).cookie, 'session=legacy-inline');
+  process.env.SMOP_COOKIE = 'session=current-inline';
+  assert.equal((await loadAuth()).cookie, 'session=current-inline');
+  delete process.env.SMOP_COOKIE;
+  delete process.env.SMUP_COOKIE;
+  const currentFile = path.join(directory, 'current-cookie.txt');
+  await writeFile(currentFile, 'session=current-file');
+  process.env.SMOP_COOKIE_FILE = currentFile;
+  assert.equal((await loadAuth()).cookie, 'session=current-file');
 });
 
 test('saved cookie round-trips with native Windows DPAPI or private file permissions', async t => {
@@ -62,10 +80,10 @@ test('saved cookie round-trips with native Windows DPAPI or private file permiss
 
 test('missing, corrupt, unsupported and invalid encrypted records give recovery instructions', async t => {
   await isolated(t);
-  await assert.rejects(loadAuth(), /Run smup setup/);
+  await assert.rejects(loadAuth(), /Run smop setup/);
   for (const text of ['{', 'null', '[]', '{"protection":"other"}', '{"protection":"windows-dpapi","encrypted":42}', '{"protection":"file"}']) {
     await writeFile(authFile(), text);
-    await assert.rejects(loadAuth(), /Run smup setup/);
+    await assert.rejects(loadAuth(), /Run smop setup/);
   }
 });
 

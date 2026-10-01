@@ -1,43 +1,43 @@
-export const HELP = `smup — download, trim and manage Smolish videos
+export const HELP = `smop — download, trim and manage Smolish videos
 
 Usage:
-  smup <URL or file> [options]          Download with VEO, trim and upload
-  smup upload <URL or file> [options]   Explicit form of the same command
+  smop <URL or file> [options]          Download with VEO, trim and upload
+  smop upload <URL or file> [options]   Explicit form of the same command
   smush <URL or file> [options]         Built-in command alias
 
 Account and videos:
-  smup setup                           Save a website cookie locally
-  smup whoami                          Check the signed-in account
-  smup list [private|public|unlisted]   List your videos, views, likes and comments
-  smup info <video-id>                  Show video details
-  smup analytics [video-id] --days 28   Account or video analytics
-  smup edit <video-id> [options]        Change title, description or visibility
-  smup resume <job-id> [options]        Continue an existing upload
-  smup jobs [job-id]                    Local upload history (alias: history)
-  smup storage [file]                  Account storage and daily upload allowance
-  smup storage --bytes <number>        Check a proposed size without uploading
-  smup doctor [--online]               Check local setup and optionally sign-in
-  smup doctor fix                     Repair VEO and media backend installation
-  smup version                        Check installed and latest npm versions
-  smup update [--check]                Install an update or check without changes
+  smop setup                           Save a website cookie locally
+  smop whoami                          Check the signed-in account
+  smop list [private|public|unlisted]   List your videos, views, likes and comments
+  smop info <video-id>                  Show video details
+  smop analytics [video-id] --days 28   Account or video analytics
+  smop edit <video-id> [options]        Change title, description or visibility
+  smop resume <job-id> [options]        Continue an existing upload
+  smop jobs [job-id]                    Local upload history (alias: history)
+  smop storage [file]                  Account storage and daily upload allowance
+  smop storage --bytes <number>        Check a proposed size without uploading
+  smop doctor [--online]               Check local setup and optionally sign-in
+  smop doctor fix                     Repair VEO and media backend installation
+  smop version                        Check installed and latest npm versions
+  smop update [--check]                Install an update or check without changes
 
 Configuration:
-  smup config show|path|edit|check|reset
-  smup config set <setting> <value>     Save a default setting
-  smup config unset <setting>          Restore its built-in default
-  smup preset list|show <name>          Inspect presets
-  smup preset add <name> [options]      Create a preset
-  smup preset use <name>|reset          Select or clear the default preset
-  smup preset remove <name>            Remove a preset
-  smup alias list|add <name>|remove <name>
+  smop config show|path|edit|check|reset
+  smop config set <setting> <value>     Save a default setting
+  smop config unset <setting>          Restore its built-in default
+  smop preset list|show <name>          Inspect presets
+  smop preset add <name> [options]      Create a preset
+  smop preset use <name>|reset          Select or clear the default preset
+  smop preset remove <name>            Remove a preset
+  smop alias list|add <name>|remove <name>
 
 Folder watchdogs:
-  smup watchdog add <name> <folder> [upload options]
-  smup watchdog list|show <name>|status [name|all]
-  smup watchdog start [name|all]        Watch in the foreground; Ctrl+C stops
-  smup watchdog stop [name|all]         Request a stop from another terminal
-  smup watchdog retry <name> [file]     Retry blocked files using saved jobs
-  smup watchdog remove <name>          Remove a stopped watchdog
+  smop watchdog add <name> <folder> [upload options]
+  smop watchdog list|show <name>|status [name|all]
+  smop watchdog start [name|all]        Watch in the foreground; Ctrl+C stops
+  smop watchdog stop [name|all]         Request a stop from another terminal
+  smop watchdog retry <name> [file]     Retry blocked files using saved jobs
+  smop watchdog remove <name>          Remove a stopped watchdog
 
 Upload options:
   --visibility <value>                 private (default), public or unlisted
@@ -80,7 +80,7 @@ The original file is preserved. Progress goes to stderr; results go to stdout.
 `;
 
 export const COMMAND_HELP = {
-  setup: `smup setup [--no-color]
+  setup: `smop setup [--no-color]
 
 Enter your Smolish website Cookie header in the hidden local prompt.
 The cookie is never accepted as a command-line argument or printed in output.
@@ -88,90 +88,90 @@ Windows stores it with DPAPI encryption for the current user. On other systems,
 the local credential file is restricted to the current user.
 Setup verifies your session before saving credentials. --json cannot show a prompt.
 `,
-  whoami: `smup whoami [--json]
+  whoami: `smop whoami [--json]
 
 Verify the current Smolish session and show your account identity.
-Credentials come from the saved cookie, SMUP_COOKIE, or SMUP_COOKIE_FILE.
+Credentials come from the saved cookie, SMOP_COOKIE, or SMOP_COOKIE_FILE.
 `,
-  info: `smup info <video-id> [--json]
+  info: `smop info <video-id> [--json]
 
 Show the selected video's title, visibility, status, views, likes and comments.
 Video IDs are strings and must be passed exactly as returned by Smolish.
 `,
-  analytics: `smup analytics [video-id] [--days 7|28|90] [--json]
+  analytics: `smop analytics [video-id] [--days 7|28|90] [--json]
 
 Show account analytics, or analytics for one video when its ID is supplied.
 The default reporting period is 28 days. --json returns machine-readable data.
 `,
-  jobs: `smup jobs [job-id] [--limit NUMBER] [--json]
+  jobs: `smop jobs [job-id] [--limit NUMBER] [--json]
 
 List local upload jobs, or inspect one job and its saved settings.
 New job IDs use six characters. Existing jobs keep their saved IDs.
-Use smup resume <job-id> to continue a prepared or interrupted upload.
+Use smop resume <job-id> to continue a prepared or interrupted upload.
 "history" is a command synonym.
 `,
-  doctor: `smup doctor [--online] [--json]
-smup doctor fix [--online] [--json]
-smup doctorfix [--online] [--json]
+  doctor: `smop doctor [--online] [--json]
+smop doctor fix [--online] [--json]
+smop doctorfix [--online] [--json]
 
 Check Node.js, VEO, yt-dlp, FFmpeg and account credential setup.
 --online also verifies the Smolish session. Repair downloads missing VEO media
 backends and rechecks them; no account credentials are changed.
 `,
-  version: `smup version [--json]
-smup --version
+  version: `smop version [--json]
+smop --version
 
 The version command checks the installed version against the official npm registry.
 --version prints only the locally installed version and makes no network request.
 Before the first npm publication, the online result reports the package unpublished.
 `,
-  update: `smup update [--check] [--json]
+  update: `smop update [--check] [--json]
 
 --check compares installed and latest npm versions without making changes.
 Update installs the exact latest published version for a global npm installation.
 Source checkouts and npm links receive the installation command to run instead.
 Account settings, cookies, watchdogs and upload jobs are kept outside the package.
 `,
-  config: `smup config show [--preset NAME] [--json]
-smup config set <setting> <value> [--json]
-smup config unset <setting> [--json]
-smup config path|edit|check|reset [--json]
+  config: `smop config show [--preset NAME] [--json]
+smop config set <setting> <value> [--json]
+smop config unset <setting> [--json]
+smop config path|edit|check|reset [--json]
 
 Settings: visibility, rename, description, start, duration, quality, output, color,
 split, splitThreshold, partLabel.
-Example: smup config set visibility private
-Example: smup config set color false
-Example: smup config set split true
-Example: smup config set splitThreshold 90
+Example: smop config set visibility private
+Example: smop config set color false
+Example: smop config set split true
+Example: smop config set splitThreshold 90
 Config is local and separate from the encrypted account cookie.
 `,
-  preset: `smup preset list [--json]
-smup preset show <name> [--json]
-smup preset add <name> [--visibility VALUE] [-r TITLE] [-q QUALITY] [--duration SECONDS]
-smup preset use <name> | smup preset reset
-smup preset remove <name>
+  preset: `smop preset list [--json]
+smop preset show <name> [--json]
+smop preset add <name> [--visibility VALUE] [-r TITLE] [-q QUALITY] [--duration SECONDS]
+smop preset use <name> | smop preset reset
+smop preset remove <name>
 
-Example: smup preset add shorts --visibility public --duration 30 -q 720p
-Example: smup preset add series --split -r "{filename} Part {part} of {parts}"
-Example: smup "https://example.com/video" --preset shorts -r "A short clip"
+Example: smop preset add shorts --visibility public --duration 30 -q 720p
+Example: smop preset add series --split -r "{filename} Part {part} of {parts}"
+Example: smop "https://example.com/video" --preset shorts -r "A short clip"
 `,
-  alias: `smup alias list [--json]
-smup alias add <name> [--bin-dir PATH] [--json]
-smup alias remove <name> [--bin-dir PATH] [--json]
+  alias: `smop alias list [--json]
+smop alias add <name> [--bin-dir PATH] [--json]
+smop alias remove <name> [--bin-dir PATH] [--json]
 
-Custom commands forward all arguments to smup. Existing commands are never
-overwritten. Only wrappers created by smup can be removed.
-Example: smup alias add smap
+Custom commands forward all arguments to smop. Existing commands are never
+overwritten. Only wrappers created by smop can be removed.
+Example: smop alias add smap
 `,
-  list: `smup list [private|public|unlisted] [--json]
-smup list --all --sort views --order desc
-smup list private --page 2 --limit 30
+  list: `smop list [private|public|unlisted] [--json]
+smop list --all --sort views --order desc
+smop list private --page 2 --limit 30
 
-Lists videos from your Smolish account, including uploads made outside smup.
+Lists videos from your Smolish account, including uploads made outside smop.
 JSON includes full IDs, titles, visibility, status, views, likes and comments.
 Missing metrics are null; --all fetches pages sequentially.
 `,
-  resume: `smup resume <job-id> [--visibility VALUE] [-r TITLE] [-d DESCRIPTION] [--json]
+  resume: `smop resume <job-id> [--visibility VALUE] [-r TITLE] [-d DESCRIPTION] [--json]
 
 Uses the saved video's metadata. Current defaults do not overwrite an existing
 job. Explicit metadata flags or a selected preset can change unfinished jobs.
@@ -179,14 +179,14 @@ Split batch jobs resume pending clips and keep completed clips without reuploadi
 Storage is checked for pending clips that do not already have a remote draft.
 Use --try-anyway to explicitly attempt when the account check cannot approve it.
 `,
-  edit: `smup edit <video-id> [--visibility VALUE] [-r TITLE] [-d DESCRIPTION] [--json]
+  edit: `smop edit <video-id> [--visibility VALUE] [-r TITLE] [-d DESCRIPTION] [--json]
 
 Changes only the explicitly supplied metadata and confirms the server result.
-Example: smup edit 12345678901234567 --visibility public -r "My video"
+Example: smop edit 12345678901234567 --visibility public -r "My video"
 `,
-  storage: `smup storage [--json]
-smup storage <file> [--json]
-smup storage --bytes <number> [--json]
+  storage: `smop storage [--json]
+smop storage <file> [--json]
+smop storage --bytes <number> [--json]
 
 Reads the signed-in account's tier, storage used/available and daily allowance
 from https://smolish.com/storage/apply. "limits" is a command synonym.
@@ -196,15 +196,15 @@ When quota is exceeded or cannot be verified, an interactive upload asks [y/N].
 JSON, redirected input and watchdogs never prompt; use --try-anyway explicitly.
 An attempt uses the normal upload API, which still enforces the site's limits.
 `,
-  watchdog: `smup watchdog add <name> <folder> [upload options] [--recursive] [--existing]
-smup watchdog add <folder> [--name NAME] [upload options]
-smup watchdog list [--json]
-smup watchdog show <name> [--json]
-smup watchdog status [name|all] [--json]
-smup watchdog start [name|all] [--try-anyway] [--json]
-smup watchdog stop [name|all] [--json]
-smup watchdog retry <name> [file] [--json]
-smup watchdog remove <name> [--json]
+  watchdog: `smop watchdog add <name> <folder> [upload options] [--recursive] [--existing]
+smop watchdog add <folder> [--name NAME] [upload options]
+smop watchdog list [--json]
+smop watchdog show <name> [--json]
+smop watchdog status [name|all] [--json]
+smop watchdog start [name|all] [--try-anyway] [--json]
+smop watchdog stop [name|all] [--json]
+smop watchdog retry <name> [file] [--json]
+smop watchdog remove <name> [--json]
 
 Add saves the resolved upload settings and preset. Existing files are skipped
 unless --existing is supplied. --recursive includes subfolders. --interval sets
@@ -217,13 +217,13 @@ Watchdogs never show quota prompts. --try-anyway is an explicit attempt only.
 
 Title variables: {filename}, {folder}, {part}, {parts}, {global}, {index}.
 Counters are durable reserved clip numbers and may have gaps after failures.
-Example: smup watchdog add clips "C:\\Videos\\Inbox" --split -r "{filename} Part {part}"
-Example: smup watchdog start clips --json
+Example: smop watchdog add clips "C:\\Videos\\Inbox" --split -r "{filename} Part {part}"
+Example: smop watchdog start clips --json
 With --json, start writes one event per stdout line and a final result (NDJSON).
 Other commands write one JSON result. "watch" is a command synonym.
 `,
-  upload: `smup <URL or file> [options]
-smup upload <URL or file> [options]
+  upload: `smop <URL or file> [options]
+smop upload <URL or file> [options]
 
 Private by default; title defaults to one ordinary space; clips are at most 60s.
 --split is off by default. With --split, remaining sources at least 90s long
@@ -233,13 +233,13 @@ Below that trigger, one clip is prepared as usual. The final part may be shorter
 --part-label prefix|suffix|none controls the automatic "Part N" label (prefix).
 An explicit {part} in -r/--rename supplies its own label.
 
-Example: smup "C:\\Videos\\long.mp4" --split -r "My video"
-Example: smup "https://example.com/video" --split -r "{filename} Part {part} of {parts}"
-Example: smup "C:\\Videos\\long.mp4" --split --dry-run --json
+Example: smop "C:\\Videos\\long.mp4" --split -r "My video"
+Example: smop "https://example.com/video" --split -r "{filename} Part {part} of {parts}"
+Example: smop "C:\\Videos\\long.mp4" --split --dry-run --json
 
 Prepared clips are checked together against live storage and daily limits before
 new drafts are created. --try-anyway explicitly attempts the normal upload API.
-Use smup --help for the full upload options.
+Use smop --help for the full upload options.
 `,
 };
 

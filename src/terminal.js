@@ -28,13 +28,13 @@ export function createTerminal({ json = false, color = true, forceColor = false,
   const styled = (stream, text, role = 'body') => paint(stream, safeText(text), role);
   const tokens = (stream, value, role = 'body') => {
     const text = safeText(value);
-    const pattern = /--?[a-z][\w-]*\b|\{[a-z]+\}|<[^<>\n]+>|https?:\/\/[^\s]+|\b(?:smup|smush)\b|\b\d+(?:\.\d+)*(?:%|s)?(?![\w.])/gi;
+    const pattern = /--?[a-z][\w-]*\b|\{[a-z]+\}|<[^<>\n]+>|https?:\/\/[^\s]+|\b(?:smop|smush)\b|\b\d+(?:\.\d+)*(?:%|s)?(?![\w.])/gi;
     let result = '', previous = 0;
     for (const match of text.matchAll(pattern)) {
       result += paint(stream, text.slice(previous, match.index), role);
       const token = match[0];
       const tokenRole = token.startsWith('-') ? 'flag' : /^[<{]/.test(token) ? 'value'
-        : /^(?:smup|smush)$/i.test(token) ? 'command' : 'number';
+        : /^(?:smop|smush)$/i.test(token) ? 'command' : 'number';
       result += paint(stream, token, tokenRole);
       previous = match.index + token.length;
     }
@@ -65,14 +65,14 @@ export function createTerminal({ json = false, color = true, forceColor = false,
       write(stdout, `${styled(stdout, `${label}:`, 'command')} ${styled(stdout, value, role === 'value' ? statusRole(value) : role)}`);
     },
     say(text) { write(stderr, tokens(stderr, text, 'muted')); },
-    error(text) { stop(); stderr.write(`${styled(stderr, `smup: ${text}`, 'error')}\n`); },
+    error(text) { stop(); stderr.write(`${styled(stderr, `smop: ${text}`, 'error')}\n`); },
     prompt(text) { return styled(stderr, text, 'prompt'); },
     help(text) {
       const lines = safeText(text).trimEnd().split('\n');
       const formatted = lines.map((line, index) => {
         if (!line.trim()) return '';
         if (index === 0 && /—/.test(line) || !/^\s/.test(line) && /^[\w /-]+:$/.test(line)) return styled(stdout, line, 'heading');
-        const command = /^(\s*)(?:smup|smush)\b/.exec(line);
+        const command = /^(\s*)(?:smop|smush)\b/.exec(line);
         if (command || /^\s+-[a-z-]/i.test(line)) {
           const indent = /^\s*/.exec(line)[0];
           const content = line.slice(indent.length);

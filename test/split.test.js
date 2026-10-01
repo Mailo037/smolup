@@ -10,7 +10,7 @@ const settings = { start: 0, duration: 60, quality: 'best', visibility: 'private
   split: true, splitThreshold: 90, partLabel: 'prefix' };
 
 async function fixture(t, { duration = 95, failPart = null } = {}) {
-  const directory = await mkdtemp(path.join(os.tmpdir(), 'smup-split-test-'));
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'smop-split-test-'));
   t.after(() => rm(directory, { recursive: true, force: true }));
   const source = path.join(directory, 'sample.mp4');
   await writeFile(source, 'original source');

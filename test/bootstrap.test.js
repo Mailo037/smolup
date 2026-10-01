@@ -19,9 +19,16 @@ test('version and help work without VEO and never install dependencies', async (
     const output = JSON.parse(io.stdout.text);
     assert.equal(output.schemaVersion, 1);
     if (args[0] === '--version') assert.equal(output.version, VERSION);
-    else assert.match(output.text, /smup/);
+    else assert.match(output.text, /smop/);
     assert.doesNotMatch(io.stdout.text + io.stderr.text, /\x1b/);
   }
+});
+
+test('human version output keeps the new command name when VEO is missing', async () => {
+  const io = fixture();
+  assert.equal(await launch(['--version'], { ...io, repair: () => assert.fail('Version must not install dependencies') }), 0);
+  assert.equal(io.stdout.text, `smop ${VERSION}\n`);
+  assert.equal(io.stderr.text, '');
 });
 
 test('missing VEO reports an actionable JSON error and only explicit repair installs', async () => {
@@ -31,7 +38,7 @@ test('missing VEO reports an actionable JSON error and only explicit repair inst
     assert.equal(await launch(args, { ...io, repair() { repairs++; } }), 1);
     assert.equal(repairs, 0);
     assert.equal(JSON.parse(io.stdout.text).status, 'failed');
-    assert.match(io.stderr.text, /smup doctorfix/);
+    assert.match(io.stderr.text, /smop doctorfix/);
   }
 });
 

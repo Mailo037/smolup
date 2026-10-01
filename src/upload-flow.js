@@ -16,7 +16,7 @@ export function preparedResult(parent, jobs) {
 
 export async function overrideJobMetadata(parent, jobs, overrides) {
   if (!Object.keys(overrides).length) return;
-  if (parent.stage === 'done') throw new Error(`This job is complete. Use smup edit ${jobs[0].videoId} to change its metadata.`);
+  if (parent.stage === 'done') throw new Error(`This job is complete. Use smop edit ${jobs[0].videoId} to change its metadata.`);
   for (const child of jobs) {
     if (child.stage === 'done') continue;
     const fields = { ...overrides };

@@ -45,7 +45,7 @@ export async function downloadVideo(url, directory, { start = 0, duration = 60, 
   log('Downloading video with VEO…');
   let pending = '';
   const downloaderEnv = { ...process.env, VEO_NO_UPDATE_CHECK: '1', VEO_CONFIG: isolatedConfig };
-  for (const key of Object.keys(downloaderEnv)) if (/^(?:smup)_cookie(?:_file)?$/i.test(key)) delete downloaderEnv[key];
+  for (const key of Object.keys(downloaderEnv)) if (/^(?:smop|smup)_cookie(?:_file)?$/i.test(key)) delete downloaderEnv[key];
   const result = await run(process.execPath, args, { signal, env: downloaderEnv,
     onStderr: chunk => {
       pending += chunk;

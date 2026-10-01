@@ -8,7 +8,7 @@ import { closeWatchdogSession, createWatchdogSession, reserveGlobalUploads, scan
 
 async function fixture(t) {
   const temporaryRoot = await realpath(os.tmpdir());
-  const directory = await realpath(await mkdtemp(path.join(temporaryRoot, 'smup-watchdog-')));
+  const directory = await realpath(await mkdtemp(path.join(temporaryRoot, 'smop-watchdog-')));
   assert.equal(path.dirname(directory), temporaryRoot);
   const folder = path.join(directory, 'videos');
   await mkdir(folder);
