@@ -161,8 +161,10 @@ async function rootFolder(folder) {
   return realpath(absolute);
 }
 
-async function canonicalOutput(file, links = 0) {
-  if (links > 40) throw new Error('The export output directory contains too many symbolic links.');
+// Resolve aliases in existing ancestors while retaining removed or not-yet-
+// created descendants. Saved uploads may be retried after their source is gone.
+async function canonicalPath(file, links = 0) {
+  if (links > 40) throw new Error('The path contains too many symbolic links.');
   let current = path.resolve(file);
   const missing = [];
   while (true) {
@@ -172,10 +174,10 @@ async function canonicalOutput(file, links = 0) {
       const stat = await lstat(current).catch(problem => { if (['ENOENT', 'ENOTDIR'].includes(problem.code)) return null; throw problem; });
       if (stat?.isSymbolicLink()) {
         const target = path.resolve(path.dirname(current), await readlink(current));
-        return canonicalOutput(path.resolve(target, ...missing), links + 1);
+        return canonicalPath(path.resolve(target, ...missing), links + 1);
       }
       const parent = path.dirname(current);
-      if (parent === current) throw new Error('Cannot resolve the export output directory.');
+      if (parent === current) throw new Error('Cannot resolve the path.');
       missing.unshift(path.basename(current));
       current = parent;
     }
@@ -183,7 +185,7 @@ async function canonicalOutput(file, links = 0) {
 }
 
 async function validateOutput(watchdog) {
-  const output = watchdog.settings.output ? await canonicalOutput(watchdog.settings.output) : null;
+  const output = watchdog.settings.output ? await canonicalPath(watchdog.settings.output) : null;
   if (output && (normalized(output) === normalized(watchdog.folder) || watchdog.recursive && within(watchdog.folder, output))) {
     throw new Error('The export output directory must be outside the watched folder to avoid uploading exported copies repeatedly.');
   }
@@ -558,7 +560,7 @@ export async function watchdogCommand(args = [], options = {}) {
       running: Boolean(runner?.names.includes(target)), ...journalSummary(state.watchdogs[target]),
       records: Object.values(state.watchdogs[target]?.records || {}).map(recordSummary) };
     if (action === 'retry') {
-      const requested = folder ? path.resolve(folder) : null;
+      const requested = folder ? await canonicalPath(folder) : null;
       if (requested && !within(registry.watchdogs[target].folder, requested)) throw new Error('The retry file must be inside the watchdog folder.');
       const retried = await transaction(paths, value => {
         const journal = value.watchdogs[target] || emptyJournal();

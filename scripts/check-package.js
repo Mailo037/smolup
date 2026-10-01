@@ -3,14 +3,15 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
-import { mkdtemp, mkdir, readFile, rename, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, realpath, rename, rm } from 'node:fs/promises';
 import { npmInvocation } from '../src/maintenance.js';
 import { run } from '../src/process.js';
 import { VERSION } from '../src/identity.js';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
-const directory = await mkdtemp(path.join(os.tmpdir(), 'smup-package-'));
-assert.equal(path.dirname(directory), path.resolve(os.tmpdir()));
+const temporaryRoot = await realpath(os.tmpdir());
+const directory = await realpath(await mkdtemp(path.join(temporaryRoot, 'smup-package-')));
+assert.equal(path.dirname(directory), temporaryRoot);
 const prefix = path.join(directory, 'install with spaces');
 const home = path.join(directory, 'home');
 const npm = await npmInvocation();
@@ -72,7 +73,7 @@ try {
   console.log(JSON.stringify({ status: 'passed', package: 'smup', version: VERSION, files: files.length,
     installedHelpColors: true, shortJobId: prepared.jobId, missingVeoRepair: true }));
 } finally {
-  assert.equal(path.dirname(directory), path.resolve(os.tmpdir()));
+  assert.equal(path.dirname(directory), temporaryRoot);
   assert.ok(path.basename(directory).startsWith('smup-package-'));
   await rm(directory, { recursive: true, force: true });
 }

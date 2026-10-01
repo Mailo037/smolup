@@ -2,19 +2,21 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import os from 'node:os';
-import { mkdtemp, mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, realpath, rm, symlink, writeFile } from 'node:fs/promises';
 import { setTimeout as delay } from 'node:timers/promises';
 import { closeWatchdogSession, createWatchdogSession, reserveGlobalUploads, scanWatchdogSession, watchdogCommand, watchdogPaths } from '../src/watchdog.js';
 
 async function fixture(t) {
-  const directory = await mkdtemp(path.join(os.tmpdir(), 'smup-watchdog-'));
-  assert.equal(path.dirname(directory), path.resolve(os.tmpdir()));
+  const temporaryRoot = await realpath(os.tmpdir());
+  const directory = await realpath(await mkdtemp(path.join(temporaryRoot, 'smup-watchdog-')));
+  assert.equal(path.dirname(directory), temporaryRoot);
   const folder = path.join(directory, 'videos');
   await mkdir(folder);
   const options = { configDir: path.join(directory, 'config'), stateDir: path.join(directory, 'state') };
   const sessions = [];
   t.after(async () => {
     for (const session of sessions) await closeWatchdogSession(session);
+    assert.equal(path.dirname(await realpath(directory)), temporaryRoot);
     await rm(directory, { recursive: true, force: true });
   });
   return { directory, folder, options, async session(target, extra) {
@@ -141,6 +143,47 @@ test('uncertain uploads are blocked without repeating and an explicit retry resu
   assert.equal(calls, 2);
   assert.equal((await watchdogCommand(['show', 'clips'], f.options)).uploadedClips, 1);
   assert.ok(events.some(event => event.type === 'upload_blocked' && event.uncertain));
+});
+
+test('retry canonicalizes folder aliases for existing and removed sources without following outside links', async t => {
+  const f = await fixture(t);
+  const nested = path.join(f.folder, 'nested');
+  const file = path.join(nested, 'clip.mp4');
+  await mkdir(nested);
+  await writeFile(file, 'clip');
+  const alias = path.join(f.directory, 'folder-alias');
+  await symlink(f.folder, alias, process.platform === 'win32' ? 'junction' : 'dir');
+  const outside = path.join(f.directory, 'outside');
+  await mkdir(outside);
+  await writeFile(path.join(outside, 'foreign.mp4'), 'outside video');
+  await symlink(outside, path.join(f.folder, 'escape'), process.platform === 'win32' ? 'junction' : 'dir');
+  await watchdogCommand(['add', 'clips', f.folder], { ...f.options, existing: true, recursive: true, stable: 0 });
+  let calls = 0;
+  const session = await f.session('clips', { uploadFile: async (source, context) => {
+    calls++;
+    assert.equal(source, file);
+    if (calls === 1) await context.recordCheckpoint({ jobIds: ['saved-parent'] });
+    else assert.deepEqual(context.existingJobIds, ['saved-parent']);
+    if (calls < 3) throw new Error('Upload interrupted');
+    return { status: 'uploaded', videoIds: ['resumed-video'] };
+  } });
+  await scanWatchdogSession(session);
+  for (const unsafe of ['foreign.mp4', 'not-created.mp4']) {
+    await assert.rejects(watchdogCommand(['retry', 'clips', path.join(alias, 'escape', unsafe)], f.options), /inside the watchdog folder/);
+  }
+  assert.equal((await watchdogCommand(['show', 'clips'], f.options)).records[0].status, 'blocked');
+  const retryFile = path.join(alias, 'nested', 'clip.mp4');
+  const requested = await watchdogCommand(['retry', 'clips', retryFile], f.options);
+  assert.equal(requested.records[0].file, file);
+  assert.deepEqual(requested.records[0].jobIds, ['saved-parent']);
+  await scanWatchdogSession(session);
+  assert.equal(calls, 2);
+  assert.equal(path.dirname(await realpath(nested)), f.folder);
+  await rm(nested, { recursive: true });
+  await watchdogCommand(['retry', 'clips', retryFile], f.options);
+  await scanWatchdogSession(session);
+  assert.equal(calls, 3);
+  assert.equal((await watchdogCommand(['show', 'clips'], f.options)).uploadedClips, 1);
 });
 
 test('an interrupted in-flight journal is never automatically recreated on restart', async t => {
