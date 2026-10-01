@@ -68,10 +68,10 @@ export async function acquireLock() {
     } catch (error) {
       if (error.code !== 'EEXIST') throw error;
       const pid = Number(await readFile(file, 'utf8'));
-      if (!Number.isSafeInteger(pid) || pid <= 0) throw new Error('The upload lock is damaged. Check upload.lock in the smop cache.');
+      if (!Number.isSafeInteger(pid) || pid <= 0) throw new Error('The upload lock is damaged. Check upload.lock in the smolup cache.');
       try {
         process.kill(pid, 0);
-        const busy = new Error('Another smop upload is running. Wait for it to finish.');
+        const busy = new Error('Another smolup upload is running. Wait for it to finish.');
         busy.code = 'UPLOAD_BUSY'; throw busy;
       }
       catch (problem) {

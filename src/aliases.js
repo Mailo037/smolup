@@ -2,8 +2,8 @@ import path from 'node:path';
 import { chmod, lstat, mkdir, readdir, open, unlink, writeFile } from 'node:fs/promises';
 import { findOnPath } from 'veodl/src/backend.js';
 
-export const BUILTINS = ['smop', 'smush', 'smup'];
-const MARKER = 'smop-managed-alias-v1';
+export const BUILTINS = ['smolup', 'smush', 'smop', 'smup'];
+const MARKER = 'smolup-managed-alias-v1';
 export function aliasName(name) {
   if (!/^[a-z][a-z0-9-]{1,30}$/.test(name || '') || /^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])$/.test(name)) {
     throw new Error('Alias names use 2–31 lowercase letters, digits or hyphens and start with a letter.');
@@ -13,8 +13,8 @@ export function aliasName(name) {
 
 export async function aliasDirectory(explicit) {
   if (explicit) return path.resolve(explicit);
-  const command = await findOnPath(['smop']);
-  if (!command) throw new Error('Cannot find smop on PATH. Run npm link or pass --bin-dir <directory>.');
+  const command = await findOnPath(['smolup']);
+  if (!command) throw new Error('Cannot find smolup on PATH. Run npm link or pass --bin-dir <directory>.');
   return path.dirname(command);
 }
 
@@ -37,17 +37,17 @@ async function ownership(file) {
       const buffer = Buffer.alloc(512);
       const { bytesRead } = await handle.read(buffer, 0, buffer.length, 0);
       const header = buffer.toString('utf8', 0, bytesRead);
-      return header.includes(MARKER) || header.includes('smup-managed-alias-v1') ? 'managed' : 'other';
+      return [MARKER, 'smop-managed-alias-v1', 'smup-managed-alias-v1'].some(marker => header.includes(marker)) ? 'managed' : 'other';
     } finally { await handle.close(); }
   } catch (error) { if (error.code === 'ENOENT') return 'missing'; throw error; }
 }
 
 export async function aliasCommand(args, { binDir, platform = process.platform } = {}) {
   const [action = 'list', name, ...extra] = args;
-  if (extra.length) throw new Error('Use smop alias list|add <name>|remove <name>.');
+  if (extra.length) throw new Error('Use smolup alias list|add <name>|remove <name>.');
   const directory = await aliasDirectory(binDir);
   if (action === 'list') {
-    if (name) throw new Error('Usage: smop alias list');
+    if (name) throw new Error('Usage: smolup alias list');
     const names = new Set(BUILTINS);
     for (const entry of await readdir(directory)) {
       const candidate = entry.replace(/\.(?:cmd|ps1)$/, '');
@@ -74,10 +74,10 @@ export async function aliasCommand(args, { binDir, platform = process.platform }
     }
     await mkdir(directory, { recursive: true });
     const wrappers = platform === 'win32' ? [
-      `#!/bin/sh\n# ${MARKER}\nexec smop "$@"\n`,
-      `@echo off\r\nREM ${MARKER}\r\ncall smop %*\r\nexit /b %errorlevel%\r\n`,
-      `# ${MARKER}\nsmop @args\nexit $LASTEXITCODE\n`,
-    ] : [`#!/bin/sh\n# ${MARKER}\nexec smop "$@"\n`];
+      `#!/bin/sh\n# ${MARKER}\nexec smolup "$@"\n`,
+      `@echo off\r\nREM ${MARKER}\r\ncall smolup %*\r\nexit /b %errorlevel%\r\n`,
+      `# ${MARKER}\nsmolup @args\nexit $LASTEXITCODE\n`,
+    ] : [`#!/bin/sh\n# ${MARKER}\nexec smolup "$@"\n`];
     const created = [];
     try {
       for (let i = 0; i < files.length; i++) { await writeFile(files[i], wrappers[i], { flag: 'wx', mode: 0o755 }); created.push(files[i]); }
@@ -86,10 +86,10 @@ export async function aliasCommand(args, { binDir, platform = process.platform }
     return { status: 'added', name, binDir: directory, paths: files };
   }
   if (['remove', 'rm'].includes(action)) {
-    if (states.some(s => s === 'other')) throw new Error(`"${name}" contains files not managed by smop. No files were removed.`);
+    if (states.some(s => s === 'other')) throw new Error(`"${name}" contains files not managed by smolup. No files were removed.`);
     if (states.every(s => s === 'missing')) throw new Error(`Alias "${name}" does not exist.`);
     for (let i = 0; i < files.length; i++) if (states[i] === 'managed') await unlink(files[i]);
     return { status: 'removed', name, binDir: directory };
   }
-  throw new Error('Use smop alias list|add <name>|remove <name>.');
+  throw new Error('Use smolup alias list|add <name>|remove <name>.');
 }

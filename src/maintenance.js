@@ -116,7 +116,7 @@ export async function checkVersion({ signal, fetchImpl = fetch, installed = VERS
 
 function childEnvironment(env = process.env) {
   const clean = { ...env };
-  for (const key of Object.keys(clean)) if (/^(?:smop|smup)_cookie(?:_file)?$/i.test(key)) delete clean[key];
+  for (const key of Object.keys(clean)) if (/^(?:smolup|smop|smup)_cookie(?:_file)?$/i.test(key)) delete clean[key];
   return clean;
 }
 

@@ -39,7 +39,7 @@ export class SmolishApi {
     }
     if (!response.ok) {
       const message = [401, 403].includes(response.status)
-        ? 'Smolish denied access. Renew your cookie with smop setup and check the website in your browser.'
+        ? 'Smolish denied access. Renew your cookie with smolup setup and check the website in your browser.'
         : response.status === 429 ? 'Smolish reached a rate or account limit. Resume later.'
           : `Smolish returned HTTP ${response.status}.`;
       throw new ApiError(message, response.status);
@@ -50,7 +50,7 @@ export class SmolishApi {
 
   async checkAuth() {
     const session = await this.request('/api/auth/get-session');
-    if (!session?.user?.id) throw new Error('The Smolish cookie has expired. Run smop setup.');
+    if (!session?.user?.id) throw new Error('The Smolish cookie has expired. Run smolup setup.');
     return { id: String(session.user.id), name: session.user.name || '' };
   }
 

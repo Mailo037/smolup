@@ -20,7 +20,7 @@ test('help keeps every line, indentation and option with distinct semantic color
   terminal.close();
   assert.equal(strip(stdout.text), `${HELP.trimEnd()}\n`);
   assert.match(stdout.text, /\x1b\[1;36mUsage:/);
-  assert.match(stdout.text, /\x1b\[36msmop/);
+  assert.match(stdout.text, /\x1b\[36msmolup/);
   assert.match(stdout.text, /\x1b\[33m--visibility/);
   assert.match(stdout.text, /\x1b\[35m<title>/);
   assert.match(stdout.text, /\x1b\[90m/);
@@ -34,7 +34,7 @@ test('all command help stays intact with colors enabled or disabled', () => {
       terminal.help(text);
       terminal.close();
       assert.equal(strip(stdout.text), `${text.trimEnd()}\n`, command);
-      if (color) assert.match(stdout.text, /\x1b\[36msmop/, command);
+      if (color) assert.match(stdout.text, /\x1b\[36msmolup/, command);
       else assert.doesNotMatch(stdout.text, /\x1b/, command);
     }
   }
@@ -45,13 +45,13 @@ test('redirected output is plain by default and explicit force colors all human 
     const { terminal, stdout, stderr } = terminalFor({ forceColor });
     terminal.output('Video ready.', 'success');
     terminal.label('Visibility', 'private');
-    terminal.help('Usage:\n  smop version --json  Check version\n');
+    terminal.help('Usage:\n  smolup version --json  Check version\n');
     terminal.table(['Job', 'Status', 'Views'], [['abc123', 'ready', 42]]);
     terminal.object({ title: 'Clip', views: 42, ready: true, missing: null });
     await terminal.step('Loading VEO', async () => {
       terminal.progress(10, 10, { started: Date.now() - 1000, initial: 0 });
     });
-    terminal.say('Resume: smop resume abc123');
+    terminal.say('Resume: smolup resume abc123');
     terminal.error('Unknown option --wat');
     terminal.close();
     assert.doesNotMatch(stdout.text + stderr.text, /\r\x1b\[2K/, 'Redirected streams must not acquire cursor animation');
@@ -59,7 +59,7 @@ test('redirected output is plain by default and explicit force colors all human 
       assert.match(stdout.text, /\x1b\[32mVideo ready/);
       assert.match(stdout.text, /\x1b\[33mprivate/);
       assert.match(stderr.text, /\x1b\[36mLoading VEO/);
-      assert.match(stderr.text, /\x1b\[31msmop: Unknown option/);
+      assert.match(stderr.text, /\x1b\[31msmolup: Unknown option/);
       for (const line of (stdout.text + stderr.text).trimEnd().split('\n').filter(line => line.trim())) {
         assert.match(line, /\x1b\[/, strip(line));
       }
@@ -124,7 +124,7 @@ test('human object output highlights JSON syntax while machine JSON is always pl
 test('incoming terminal controls are removed before rendering but generated colors survive', () => {
   const { terminal, stdout, stderr } = terminalFor({ isTTY: true });
   terminal.label('Title', '\x1b[31munsafe\x1b[0m\x1b]0;fake-title\x07');
-  terminal.say('Resume: smop resume abc123\nStudio: https://smolish.com/studio');
+  terminal.say('Resume: smolup resume abc123\nStudio: https://smolish.com/studio');
   assert.equal(strip(stdout.text), 'Title: unsafe\n');
   assert.doesNotMatch(stdout.text, /fake-title|\x07/);
   assert.match(stdout.text, /\x1b\[35munsafe/);

@@ -83,7 +83,7 @@ async function acquireFileLock(file, data, { wait = false, signal } = {}) {
       if (!current) continue;
       if (!alive(current.pid)) { await rm(file, { force: true }); continue; }
       if (wait && Date.now() < deadline) { await delay(25, undefined, { signal }); continue; }
-      throw new Error(wait ? 'Watchdog data is busy. Try again.' : 'A watchdog runner is already active. Use smop watchdog status or stop.');
+      throw new Error(wait ? 'Watchdog data is busy. Try again.' : 'A watchdog runner is already active. Use smolup watchdog status or stop.');
     }
   }
 }
@@ -281,7 +281,7 @@ export async function createWatchdogSession(target = 'all', options = {}) {
   const paths = watchdogPaths(options);
   const registry = checkRegistry(await readJson(paths.config, emptyRegistry));
   const names = selectedNames(registry, target);
-  if (!names.length) throw new Error('No watchdogs are configured. Use smop watchdog add <name> <folder>.');
+  if (!names.length) throw new Error('No watchdogs are configured. Use smolup watchdog add <name> <folder>.');
   const lock = await acquireFileLock(paths.runner, { names, startedAt: new Date().toISOString() }, { signal: options.signal });
   const session = { paths, lock, names: new Set(names), registry, signal: options.signal, uploadFile: options.uploadFile,
     emit: options.emit || (() => {}), now: options.now || Date.now, options, closed: false };
@@ -506,10 +506,10 @@ async function runWatchdogs(target, options) {
 export async function watchdogCommand(args = [], options = {}) {
   const [action = 'list', target, folder, ...extra] = args;
   const paths = watchdogPaths(options);
-  if (extra.length) throw new Error('Use smop watchdog add <name> <folder> or watchdog list|show|remove|start|stop|status|retry.');
+  if (extra.length) throw new Error('Use smolup watchdog add <name> <folder> or watchdog list|show|remove|start|stop|status|retry.');
   if (action === 'add') {
     watchdogName(target);
-    if (!folder) throw new Error('Usage: smop watchdog add <name> <folder>');
+    if (!folder) throw new Error('Usage: smolup watchdog add <name> <folder>');
     const record = { folder: await rootFolder(folder), settings: snapshotSettings(options.resolvedSettings || options.settings || DEFAULTS),
       recursive: Boolean(options.recursive), existing: Boolean(options.existing),
       interval: seconds(options.interval ?? 5, 'Interval', 0.1, 3600), stable: seconds(options.stable ?? 10, 'Stable delay', 0, 3600),
@@ -532,21 +532,21 @@ export async function watchdogCommand(args = [], options = {}) {
     return { status: 'added', name: target, ...record, ignoredFiles: candidates.length };
   }
   if (action === 'start') {
-    if (folder) throw new Error('Usage: smop watchdog start [name|all]');
+    if (folder) throw new Error('Usage: smolup watchdog start [name|all]');
     return runWatchdogs(target || 'all', options);
   }
   const registry = checkRegistry(await readJson(paths.config, emptyRegistry));
   const state = checkState(await readJson(paths.state, emptyState));
   const runner = await runnerStatus(paths);
   if (['list', 'status'].includes(action)) {
-    if (folder || (action === 'list' && target)) throw new Error(`Usage: smop watchdog ${action}${action === 'status' ? ' [name|all]' : ''}`);
+    if (folder || (action === 'list' && target)) throw new Error(`Usage: smolup watchdog ${action}${action === 'status' ? ' [name|all]' : ''}`);
     const names = action === 'status' ? selectedNames(registry, target) : Object.keys(registry.watchdogs).sort();
     return { status: 'ok', globalReservedClips: state.globalCount, watchdogs: names.map(name => ({ name, ...registry.watchdogs[name],
       running: Boolean(runner?.names.includes(name)), pid: runner?.names.includes(name) ? runner.pid : null,
       ...journalSummary(state.watchdogs[name]) })) };
   }
   if (action === 'stop') {
-    if (folder) throw new Error('Usage: smop watchdog stop [name|all]');
+    if (folder) throw new Error('Usage: smolup watchdog stop [name|all]');
     const names = selectedNames(registry, target);
     const running = names.filter(name => runner?.names.includes(name));
     for (const name of running) await writeJson(path.join(paths.stateDir, `stop-${name}.json`), { token: runner.token, requestedAt: new Date().toISOString() });
@@ -555,7 +555,7 @@ export async function watchdogCommand(args = [], options = {}) {
   if (['show', 'remove', 'rm', 'retry'].includes(action)) {
     watchdogName(target);
     if (!Object.hasOwn(registry.watchdogs, target)) throw new Error(`Watchdog "${target}" does not exist.`);
-    if (action !== 'retry' && folder) throw new Error(`Usage: smop watchdog ${action} <name>`);
+    if (action !== 'retry' && folder) throw new Error(`Usage: smolup watchdog ${action} <name>`);
     if (action === 'show') return { status: 'ok', name: target, ...registry.watchdogs[target],
       running: Boolean(runner?.names.includes(target)), ...journalSummary(state.watchdogs[target]),
       records: Object.values(state.watchdogs[target]?.records || {}).map(recordSummary) };
@@ -568,7 +568,7 @@ export async function watchdogCommand(args = [], options = {}) {
         for (const record of records) record.status = 'retry';
         return records.map(recordSummary);
       });
-      if (!retried.length) throw new Error('No blocked watchdog uploads match. Use smop watchdog show <name>.');
+      if (!retried.length) throw new Error('No blocked watchdog uploads match. Use smolup watchdog show <name>.');
       return { status: 'retry-requested', name: target, records: retried };
     }
     if (runner?.names.includes(target)) throw new Error('Stop this watchdog before removing it.');
@@ -579,5 +579,5 @@ export async function watchdogCommand(args = [], options = {}) {
     // Keep upload history and counters so adding the same folder again cannot silently duplicate completed uploads.
     return { status: 'removed', name: target, historyRetained: true };
   }
-  throw new Error('Use smop watchdog add|list|show|remove|start|stop|status|retry.');
+  throw new Error('Use smolup watchdog add|list|show|remove|start|stop|status|retry.');
 }

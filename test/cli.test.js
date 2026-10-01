@@ -13,11 +13,11 @@ const video = extra => ({ id: ID, title: 'Existing title', description: 'Origina
   status: 'ready', durationSeconds: 42, sizeBytes: 500, viewsCount: 12, likesCount: 3, commentsCount: 1, ...extra });
 
 async function isolatedHome(t) {
-  const directory = await mkdtemp(path.join(os.tmpdir(), 'smop-cli-test-'));
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'smolup-cli-test-'));
   assert.equal(path.dirname(directory), path.resolve(os.tmpdir()));
-  const names = ['SMOP_HOME', 'SMOP_CONFIG', 'SMOP_COOKIE', 'SMOP_COOKIE_FILE', 'SMUP_HOME', 'SMUP_CONFIG', 'SMUP_COOKIE', 'SMUP_COOKIE_FILE'];
+  const names = ['SMOLUP_HOME', 'SMOLUP_CONFIG', 'SMOLUP_COOKIE', 'SMOLUP_COOKIE_FILE', 'SMOP_HOME', 'SMUP_HOME', 'SMOP_CONFIG', 'SMUP_CONFIG', 'SMOP_COOKIE', 'SMUP_COOKIE', 'SMOP_COOKIE_FILE', 'SMUP_COOKIE_FILE'];
   const old = Object.fromEntries(names.map(name => [name, process.env[name]]));
-  process.env.SMOP_HOME = directory;
+  process.env.SMOLUP_HOME = directory;
   for (const name of names.slice(1)) delete process.env[name];
   t.after(async () => {
     for (const [name, value] of Object.entries(old)) {

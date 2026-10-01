@@ -17,11 +17,11 @@ async function temporaryDirectory(t, prefix) {
 }
 
 async function temporaryConfig(t) {
-  const directory = await temporaryDirectory(t, 'smop-config-test-');
-  const names = ['SMOP_HOME', 'SMOP_CONFIG', 'SMUP_HOME', 'SMUP_CONFIG'];
+  const directory = await temporaryDirectory(t, 'smolup-config-test-');
+  const names = ['SMOLUP_HOME', 'SMOLUP_CONFIG', 'SMOP_HOME', 'SMUP_HOME', 'SMOP_CONFIG', 'SMUP_CONFIG'];
   const previous = Object.fromEntries(names.map(name => [name, process.env[name]]));
   for (const name of names) delete process.env[name];
-  process.env.SMOP_HOME = directory;
+  process.env.SMOLUP_HOME = directory;
   t.after(() => {
     for (const [name, value] of Object.entries(previous)) {
       if (value === undefined) delete process.env[name]; else process.env[name] = value;
@@ -129,14 +129,14 @@ test('CLI filters account lists and validates command-specific flags and conflic
 });
 
 test('aliases create and remove only their managed wrappers in the explicit directory', async t => {
-  const directory = await temporaryDirectory(t, 'smop-alias-test-');
+  const directory = await temporaryDirectory(t, 'smolup-alias-test-');
   const options = { binDir: directory, platform: 'win32' };
   const added = await aliasCommand(['add', 'smap'], options);
   assert.equal(added.status, 'added');
   assert.equal(added.paths.length, 3);
   for (const file of added.paths) {
     assert.equal(path.dirname(file), directory);
-    assert.match(await readFile(file, 'utf8'), /smop-managed-alias-v1/);
+    assert.match(await readFile(file, 'utf8'), /smolup-managed-alias-v1/);
   }
   const listed = await aliasCommand(['list'], options);
   assert.equal(listed.aliases.find(item => item.name === 'smap').builtin, false);
@@ -147,9 +147,9 @@ test('aliases create and remove only their managed wrappers in the explicit dire
 });
 
 test('alias management protects built-ins, unrelated commands, and an alias with one replaced wrapper', async t => {
-  const directory = await temporaryDirectory(t, 'smop-alias-protect-test-');
+  const directory = await temporaryDirectory(t, 'smolup-alias-protect-test-');
   const options = { binDir: directory, platform: 'win32' };
-  for (const name of ['smop', 'smush', 'smup']) {
+  for (const name of ['smolup', 'smush', 'smop', 'smup']) {
     await assert.rejects(aliasCommand(['add', name], options), /built-in/);
     await assert.rejects(aliasCommand(['remove', name], options), /built-in/);
   }
@@ -167,15 +167,17 @@ test('alias management protects built-ins, unrelated commands, and an alias with
 });
 
 test('legacy managed aliases can still be listed and removed after the rename', async t => {
-  const directory = await temporaryDirectory(t, 'smop-legacy-alias-test-');
+  const directory = await temporaryDirectory(t, 'smolup-legacy-alias-test-');
   const options = { binDir: directory, platform: 'win32' };
-  const files = ['legacy', 'legacy.cmd', 'legacy.ps1'].map(name => path.join(directory, name));
-  for (const file of files) await writeFile(file, '# smup-managed-alias-v1\n');
-  const listed = await aliasCommand(['list'], options);
-  assert.equal(listed.aliases.find(item => item.name === 'legacy').present, true);
-  assert.equal(listed.aliases.find(item => item.name === 'legacy').builtin, false);
-  await aliasCommand(['remove', 'legacy'], options);
-  for (const file of files) await assert.rejects(access(file), { code: 'ENOENT' });
+  for (const marker of ['smop-managed-alias-v1', 'smup-managed-alias-v1']) {
+    const files = ['legacy', 'legacy.cmd', 'legacy.ps1'].map(name => path.join(directory, name));
+    for (const file of files) await writeFile(file, `# ${marker}\n`);
+    const listed = await aliasCommand(['list'], options);
+    assert.equal(listed.aliases.find(item => item.name === 'legacy').present, true);
+    assert.equal(listed.aliases.find(item => item.name === 'legacy').builtin, false);
+    await aliasCommand(['remove', 'legacy'], options);
+    for (const file of files) await assert.rejects(access(file), { code: 'ENOENT' });
+  }
 });
 
 test('JSON output remains a single uncolored schema record while progress goes to stderr', async () => {
@@ -222,7 +224,7 @@ test('NO_COLOR and explicit color disabling remove color codes from terminal mes
     terminal.error('Problem');
     terminal.close();
     assert.equal(stdout.text, 'Ready\n');
-    assert.equal(stderr.text, 'smop: Problem\n');
+    assert.equal(stderr.text, 'smolup: Problem\n');
   }
 });
 test('terminal animation pauses while a confirmation prompt is waiting for input', async () => {

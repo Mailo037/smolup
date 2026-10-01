@@ -24,7 +24,7 @@ export function parseArgs(args) {
     if (!item.startsWith('-')) { positional.push(item); continue; }
     const equal = item.indexOf('=');
     const flag = item.startsWith('--') ? item.slice(2, equal > 0 ? equal : undefined) : SHORT[item.slice(1)];
-    if (!flag || (!STRINGS.has(flag) && !BOOLEAN.has(flag))) throw new Error(`Unknown option: ${item}. Run smop --help.`);
+    if (!flag || (!STRINGS.has(flag) && !BOOLEAN.has(flag))) throw new Error(`Unknown option: ${item}. Run smolup --help.`);
     flags.push(flag);
     if (BOOLEAN.has(flag)) {
       if (equal > 0) throw new Error(`--${flag} does not take a value.`);
@@ -47,7 +47,7 @@ export function parseArgs(args) {
   if (raw.color && raw['no-color']) throw new Error('Use either --color or --no-color.');
   if (raw.color || raw['no-color']) options.overrides.color = !raw['no-color'];
   if (options.help || options.version) return options;
-  for (const flag of flags) if (!COMMON.includes(flag) && !ALLOWED[command].includes(flag)) throw new Error(`--${flag} is not supported by smop ${command}.`);
+  for (const flag of flags) if (!COMMON.includes(flag) && !ALLOWED[command].includes(flag)) throw new Error(`--${flag} is not supported by smolup ${command}.`);
   if (raw.rename !== undefined && raw.title !== undefined) throw new Error('Use either --rename or --title, not both.');
   for (const key of ['visibility', 'rename', 'description', 'start', 'duration', 'quality', 'output']) {
     const value = key === 'rename' ? raw.rename ?? raw.title : raw[key];
@@ -79,21 +79,21 @@ export function parseArgs(args) {
     options.filters.status = raw.status;
   }
   if (command === 'list') {
-    if (positional.length > 1 || (positional[0] && !VISIBILITIES.includes(positional[0]))) throw new Error('Usage: smop list [private|public|unlisted]');
+    if (positional.length > 1 || (positional[0] && !VISIBILITIES.includes(positional[0]))) throw new Error('Usage: smolup list [private|public|unlisted]');
     if (positional[0] && raw.visibility && positional[0] !== raw.visibility) throw new Error('Conflicting visibility filters.');
     options.filters.visibility = positional[0] || raw.visibility;
     if (options.all && options.page !== 1) throw new Error('--all starts at page 1 and cannot be combined with another --page.');
   }
   if (['upload', 'resume', 'info', 'edit'].includes(command)) {
-    if (positional.length !== 1) throw new Error(`smop ${command} requires exactly one ${command === 'upload' ? 'video URL or file' : command === 'resume' ? 'job ID' : 'video ID'}.`);
+    if (positional.length !== 1) throw new Error(`smolup ${command} requires exactly one ${command === 'upload' ? 'video URL or file' : command === 'resume' ? 'job ID' : 'video ID'}.`);
     options.source = positional[0];
   }
-  if (['setup', 'whoami', 'doctor', 'doctorfix', 'version', 'update'].includes(command) && positional.length) throw new Error(`smop ${command} does not take positional arguments.`);
-  if (['jobs', 'analytics'].includes(command) && positional.length > 1) throw new Error(`smop ${command} accepts at most one ID.`);
-  if (command === 'storage' && (positional.length > 1 || (positional.length && options.bytes !== undefined))) throw new Error('Usage: smop storage [file] or smop storage --bytes <size>');
+  if (['setup', 'whoami', 'doctor', 'doctorfix', 'version', 'update'].includes(command) && positional.length) throw new Error(`smolup ${command} does not take positional arguments.`);
+  if (['jobs', 'analytics'].includes(command) && positional.length > 1) throw new Error(`smolup ${command} accepts at most one ID.`);
+  if (command === 'storage' && (positional.length > 1 || (positional.length && options.bytes !== undefined))) throw new Error('Usage: smolup storage [file] or smolup storage --bytes <size>');
   if (command === 'watchdog') {
     const action = positional[0] || 'list';
-    if (!['add', 'list', 'show', 'remove', 'rm', 'start', 'stop', 'status', 'retry'].includes(action)) throw new Error('Use smop watchdog add|list|show|remove|start|stop|status|retry.');
+    if (!['add', 'list', 'show', 'remove', 'rm', 'start', 'stop', 'status', 'retry'].includes(action)) throw new Error('Use smolup watchdog add|list|show|remove|start|stop|status|retry.');
     if (action !== 'add' && flags.some(f => ['visibility', 'rename', 'title', 'description', 'start', 'duration', 'quality', 'output', 'preset', 'profile', 'split', 'no-split', 'split-threshold', 'part-label', 'recursive', 'existing', 'interval', 'stable', 'name'].includes(f))) throw new Error('Watchdog settings are only accepted by watchdog add.');
     if (options.tryAnyway && action !== 'start') throw new Error('--try-anyway applies only to watchdog start.');
     if (action === 'add' && positional.length === 2) {
@@ -103,6 +103,6 @@ export function parseArgs(args) {
     } else if (action === 'add' && options.name) throw new Error('Use --name only with watchdog add <folder>.');
   }
   if (command === 'edit' && !Object.keys(options.overrides).some(k => ['visibility', 'rename', 'description'].includes(k)) && !options.preset) throw new Error('Use --visibility, --rename or --description to edit a video.');
-  if (command === 'preset' && positional[0] !== 'add' && Object.keys(options.overrides).some(k => k !== 'color')) throw new Error('Preset settings are only accepted by smop preset add.');
+  if (command === 'preset' && positional[0] !== 'add' && Object.keys(options.overrides).some(k => k !== 'color')) throw new Error('Preset settings are only accepted by smolup preset add.');
   return options;
 }

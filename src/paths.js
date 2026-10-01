@@ -2,13 +2,12 @@ import os from 'node:os';
 import path from 'node:path';
 import { existsSync } from 'node:fs';
 
-export const environmentValue = (suffix, env = process.env) => env[`SMOP_${suffix}`] ?? env[`SMUP_${suffix}`];
+export const environmentValue = (suffix, env = process.env) => env[`SMOLUP_${suffix}`] ?? env[`SMOP_${suffix}`] ?? env[`SMUP_${suffix}`];
 
 function applicationDirectory(root) {
-  const current = path.join(root, 'smop');
-  const previous = path.join(root, 'smup');
+  const current = path.join(root, 'smolup');
   // Reuse existing data without copying cookies or splitting resumable history.
-  return !existsSync(current) && existsSync(previous) ? previous : current;
+  return [current, path.join(root, 'smop'), path.join(root, 'smup')].find(existsSync) || current;
 }
 
 export function configDirectory() {

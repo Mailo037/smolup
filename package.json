@@ -1,22 +1,23 @@
 {
-  "name": "smop",
+  "name": "smolup",
   "version": "0.4.0",
   "description": "Download, trim and manage Smolish videos from the command line.",
   "type": "module",
   "bin": {
-    "smop": "bin/smop.js",
-    "smush": "bin/smop.js",
-    "smup": "bin/smop.js"
+    "smolup": "bin/smolup.js",
+    "smush": "bin/smolup.js",
+    "smup": "bin/smolup.js",
+    "smop": "bin/smolup.js"
   },
   "license": "MIT",
   "author": "Mailo037",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Mailo037/smop.git"
+    "url": "git+https://github.com/Mailo037/smolup.git"
   },
-  "homepage": "https://github.com/Mailo037/smop#readme",
+  "homepage": "https://github.com/Mailo037/smolup#readme",
   "bugs": {
-    "url": "https://github.com/Mailo037/smop/issues"
+    "url": "https://github.com/Mailo037/smolup/issues"
   },
   "keywords": [
     "smolish",

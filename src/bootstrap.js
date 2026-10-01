@@ -16,9 +16,9 @@ export async function repairDependency(signal) {
   const env = { ...process.env };
   // npm run/npx can forward persistent script policy as a rejected env override.
   // This repair blocks every lifecycle script explicitly with --ignore-scripts.
-  for (const key of Object.keys(env)) if (/^(?:smop|smup)_cookie(?:_file)?$|^npm_config_allow_scripts$/i.test(key)) delete env[key];
+  for (const key of Object.keys(env)) if (/^(?:smolup|smop|smup)_cookie(?:_file)?$|^npm_config_allow_scripts$/i.test(key)) delete env[key];
   const result = await run(npm.file, [...npm.args, 'install', '--global=false', '--prefix', root, '--omit=dev', '--ignore-scripts', '--no-audit', '--no-fund'], { signal, env });
-  if (result.code !== 0) throw new Error('VEO dependency installation failed. Run npm install in the smop installation directory, then retry smop doctorfix.');
+  if (result.code !== 0) throw new Error('VEO dependency installation failed. Run npm install in the smolup installation directory, then retry smolup doctorfix.');
 }
 
 export async function launch(args = process.argv.slice(2), dependencies = {}) {
@@ -48,7 +48,7 @@ export async function launch(args = process.argv.slice(2), dependencies = {}) {
       const repair = args[0] === 'doctorfix' || args[0] === 'doctor' && args[1] === 'fix';
       const extra = args.slice(args[1] === 'fix' ? 2 : 1);
       if (!repair || extra.some(arg => !['--json', '--color', '--no-color', '--online'].includes(arg)) || args.includes('--color') && args.includes('--no-color')) {
-        throw new Error('The VEO dependency is missing. Run smop doctorfix to install it.');
+        throw new Error('The VEO dependency is missing. Run smolup doctorfix to install it.');
       }
       stderr.write(`${paint('Installing the pinned VEO dependency…')}\n`);
       await (dependencies.repair || repairDependency)(controller.signal);
@@ -62,7 +62,7 @@ export async function launch(args = process.argv.slice(2), dependencies = {}) {
     return await module.main(args, { stdout, stderr });
   } catch (error) {
     const message = controller.signal.aborted ? 'Cancelled.' : error.message;
-    stderr.write(`${paint(`smop: ${message}`, 31)}\n`);
+    stderr.write(`${paint(`smolup: ${message}`, 31)}\n`);
     if (json) stdout.write(`${JSON.stringify({ schemaVersion: 1, command: args[0] || null, status: 'failed', error: message })}\n`);
     return controller.signal.aborted ? 130 : 1;
   } finally {

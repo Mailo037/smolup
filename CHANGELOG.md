@@ -2,8 +2,8 @@
 
 ## 0.4.0
 
-- Prepare the first public `smop` npm release and GitHub repository.
-- Rename the primary command and package to `smop`, retaining `smup` and legacy environment variables as compatibility fallbacks and reusing existing data directories.
+- Prepare the first public `smolup` npm release and `Mailo037/smolup` GitHub repository.
+- Use `smolup` as the primary command, retaining `smush`, `smop` and `smup` aliases, legacy environment variables and existing data directories.
 - Use six-character VEO-style upload job IDs, with legacy UUID resume support.
 - Add version checks, explicit updates and `doctorfix` for media dependencies.
 - Color help, commands, flags, values, tables, progress and errors consistently.

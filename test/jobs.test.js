@@ -7,13 +7,13 @@ import { createJob, JOB_ID, listJobs, loadJob } from '../src/jobs.js';
 import { jobsDirectory } from '../src/paths.js';
 
 async function isolated(work) {
-  const root = await mkdtemp(path.join(os.tmpdir(), 'smop-jobs-'));
-  const previous = process.env.SMOP_HOME;
-  process.env.SMOP_HOME = root;
+  const root = await mkdtemp(path.join(os.tmpdir(), 'smolup-jobs-'));
+  const previous = process.env.SMOLUP_HOME;
+  process.env.SMOLUP_HOME = root;
   try { return await work(root); }
   finally {
-    if (previous === undefined) delete process.env.SMOP_HOME;
-    else process.env.SMOP_HOME = previous;
+    if (previous === undefined) delete process.env.SMOLUP_HOME;
+    else process.env.SMOLUP_HOME = previous;
     await rm(root, { recursive: true, force: true });
   }
 }

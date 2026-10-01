@@ -14,7 +14,7 @@ const bytes = Buffer.from('sample-video-bytes-that-span-multiple-parts');
 const cookie = 'smolish.session_token=test-secret';
 
 async function fixture(t, { failedPart = false, completeDisconnect = false, pending = false } = {}) {
-  const directory = await mkdtemp(path.join(os.tmpdir(), 'smop-test-'));
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'smolup-test-'));
   t.after(() => rm(directory, { recursive: true, force: true }));
   const file = path.join(directory, 'prepared.mp4');
   await writeFile(file, bytes);

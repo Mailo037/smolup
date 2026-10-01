@@ -45,37 +45,37 @@ export async function saveConfig(config, file = configFile()) {
 
 export function resolveSettings(config, overrides = {}, selected) {
   const name = selected === 'none' ? null : selected || config.activePreset;
-  if (name && !Object.hasOwn(config.presets, name)) throw new Error(`Unknown preset "${name}". Run smop preset list.`);
+  if (name && !Object.hasOwn(config.presets, name)) throw new Error(`Unknown preset "${name}". Run smolup preset list.`);
   return { ...DEFAULTS, ...config.defaults, ...(name ? config.presets[name] : {}), ...validateSettings(overrides), preset: name };
 }
 
 export async function configCommand(args, { preset } = {}) {
   const [action = 'show', key, value, ...extra] = args;
-  if (extra.length) throw new Error('Usage: smop config set <setting> <value>');
+  if (extra.length) throw new Error('Usage: smolup config set <setting> <value>');
   if (action === 'path') {
-    if (key) throw new Error('Usage: smop config path');
+    if (key) throw new Error('Usage: smolup config path');
     return { status: 'ok', file: configFile() };
   }
   if (action === 'reset') {
-    if (key) throw new Error('Usage: smop config reset');
+    if (key) throw new Error('Usage: smolup config reset');
     await saveConfig(emptyConfig());
     return { status: 'reset', file: configFile(), config: emptyConfig() };
   }
   const config = await loadConfig();
   if (['show', 'check'].includes(action)) {
-    if (key) throw new Error(`Usage: smop config ${action}`);
+    if (key) throw new Error(`Usage: smolup config ${action}`);
     return { status: action === 'check' ? 'valid' : 'ok', file: configFile(), config, effective: resolveSettings(config, {}, preset) };
   }
   if (action === 'set') {
-    if (!key || value === undefined) throw new Error('Usage: smop config set <setting> <value>');
+    if (!key || value === undefined) throw new Error('Usage: smolup config set <setting> <value>');
     config.defaults[key] = settingValue(key, value);
   } else if (['unset', 'remove'].includes(action)) {
-    if (!key || value !== undefined) throw new Error('Usage: smop config unset <setting>');
+    if (!key || value !== undefined) throw new Error('Usage: smolup config unset <setting>');
     // Validate the name even when no custom value is present.
     validateSetting(key, config.defaults[key] ?? DEFAULTS[key] ?? (key === 'output' ? '.' : ''));
     delete config.defaults[key];
   } else if (action === 'edit') {
-    if (key) throw new Error('Usage: smop config edit');
+    if (key) throw new Error('Usage: smolup config edit');
     await saveConfig(config);
     const editor = process.env.VISUAL || process.env.EDITOR || (process.platform === 'win32' ? 'notepad.exe' : 'nano');
     const command = [...editor.matchAll(/"([^"]+)"|'([^']+)'|([^\s]+)/g)].map(m => m[1] || m[2] || m[3]);
@@ -86,21 +86,21 @@ export async function configCommand(args, { preset } = {}) {
     });
     if (code !== 0) throw new Error('The config editor did not finish successfully.');
     return { status: 'valid', file: configFile(), config: await loadConfig() };
-  } else throw new Error('Use smop config show|set|unset|path|edit|check|reset.');
+  } else throw new Error('Use smolup config show|set|unset|path|edit|check|reset.');
   await saveConfig(config);
   return { status: action === 'set' ? 'updated' : 'removed', file: configFile(), config, effective: resolveSettings(config) };
 }
 
 export async function presetCommand(args, overrides = {}) {
   const [action = 'list', name, ...extra] = args;
-  if (extra.length) throw new Error('Use smop preset list|show|add|remove|use|reset.');
+  if (extra.length) throw new Error('Use smolup preset list|show|add|remove|use|reset.');
   const config = await loadConfig();
   if (action === 'list') {
-    if (name) throw new Error('Usage: smop preset list');
+    if (name) throw new Error('Usage: smolup preset list');
     return { status: 'ok', activePreset: config.activePreset, presets: config.presets };
   }
   if (action === 'reset') {
-    if (name) throw new Error('Usage: smop preset reset');
+    if (name) throw new Error('Usage: smolup preset reset');
     config.activePreset = null;
   } else {
     presetName(name);
@@ -112,7 +112,7 @@ export async function presetCommand(args, overrides = {}) {
       if (action === 'show') return { status: 'ok', name, settings: config.presets[name], effective: resolveSettings(config, {}, name) };
       if (['remove', 'rm'].includes(action)) { delete config.presets[name]; if (config.activePreset === name) config.activePreset = null; }
       else if (action === 'use') config.activePreset = name;
-      else throw new Error('Use smop preset list|show|add|remove|use|reset.');
+      else throw new Error('Use smolup preset list|show|add|remove|use|reset.');
     }
   }
   await saveConfig(config);

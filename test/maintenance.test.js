@@ -11,14 +11,14 @@ import { main } from '../src/cli.js';
 
 const integrity = `sha512-${Buffer.alloc(64, 7).toString('base64')}`;
 const metadata = (version = '1.0.0') => ({ name: PACKAGE_NAME, version,
-  dist: { tarball: `${NPM_REGISTRY}${PACKAGE_NAME}/-/${PACKAGE_NAME}-${version}.tgz`, integrity } });
+  dist: { tarball: `${NPM_REGISTRY}${PACKAGE_NAME}/-/${PACKAGE_NAME.split('/').at(-1)}-${version}.tgz`, integrity } });
 const checked = (version = '1.0.0') => ({ status: 'update-available', package: PACKAGE_NAME, installed: VERSION,
   latest: version, published: true, updateAvailable: true, registry: NPM_REGISTRY, checkedAt: new Date().toISOString() });
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
 const npm = { file: '/node-executable', args: ['/npm/npm-cli.js'] };
 
 async function temporary(t) {
-  const directory = await mkdtemp(path.join(os.tmpdir(), 'smop-maintenance-'));
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'smolup-maintenance-'));
   assert.equal(path.dirname(directory), path.resolve(os.tmpdir()));
   t.after(() => rm(directory, { recursive: true, force: true }));
   return directory;
@@ -54,7 +54,7 @@ test('version checks use the official registry with no redirects or credentials 
   let request;
   const fetchImpl = async (url, options) => { request = { url, options }; return json(metadata('0.4.1')); };
   const result = await checkVersion({ installed: '0.4.0', fetchImpl });
-  assert.equal(request.url, `${NPM_REGISTRY}${PACKAGE_NAME}/latest`);
+  assert.equal(request.url, `${NPM_REGISTRY}${encodeURIComponent(PACKAGE_NAME)}/latest`);
   assert.deepEqual(request.options.headers, { accept: 'application/json' });
   assert.equal(request.options.redirect, 'error');
   assert.ok(request.options.signal instanceof AbortSignal);
@@ -125,7 +125,9 @@ test('source and npm-linked installations receive exact install guidance without
   assert.equal(plain.status, 'manual-install');
   assert.equal(plain.installation, 'source');
   assert.equal(plain.installCommand, `npm install --global ${PACKAGE_NAME}@1.0.0 --registry=${NPM_REGISTRY}`);
-  await symlink(source, path.join(globalRoot, PACKAGE_NAME), 'junction');
+  const linkedDirectory = path.join(globalRoot, ...PACKAGE_NAME.split('/'));
+  await mkdir(path.dirname(linkedDirectory), { recursive: true });
+  await symlink(source, linkedDirectory, 'junction');
   const linked = await updatePackage({ check, runImpl, npmCommand: npm, directory: source });
   assert.equal(linked.installation, 'linked');
   assert.equal(calls.length, 2);
@@ -145,7 +147,8 @@ test('a genuine global update installs an exact verified version and strips Smol
     return { code: 0, stdout: 'installed', stderr: '' };
   };
   const result = await updatePackage({ check: async () => checked(), runImpl, npmCommand: npm, directory,
-    env: { PATH: '/bin', SMOP_COOKIE: 'private', smop_cookie_file: '/secret', sMoP_CoOkIe: 'private-too',
+    env: { PATH: '/bin', SMOLUP_COOKIE: 'private', smolup_cookie_file: '/secret', sMolUp_CoOkIe: 'private-too',
+      SMOP_COOKIE: 'previous-private', smop_cookie_file: '/previous-secret', sMoP_CoOkIe: 'previous-private-too',
       SMUP_COOKIE: 'legacy-private', smup_cookie_file: '/legacy-secret', sMuP_CoOkIe: 'legacy-private-too' } });
   assert.equal(result.status, 'updated');
   assert.equal(result.installed, '1.0.0');
@@ -157,7 +160,7 @@ test('a genuine global update installs an exact verified version and strips Smol
 
 test('npm success must be followed by verification of the installed package version', async t => {
   const base = await temporary(t), directory = path.join(base, PACKAGE_NAME);
-  await mkdir(directory); await writeFile(path.join(directory, 'package.json'), JSON.stringify({ name: PACKAGE_NAME, version: VERSION }));
+  await mkdir(directory, { recursive: true }); await writeFile(path.join(directory, 'package.json'), JSON.stringify({ name: PACKAGE_NAME, version: VERSION }));
   const runImpl = async (_file, args) => ({ code: 0, stdout: args.includes('root') ? `${base}\n` : '', stderr: '' });
   await assert.rejects(updatePackage({ check: async () => checked(), runImpl, npmCommand: npm, directory }), /was not confirmed/);
   await assert.rejects(updatePackage({ check: async () => ({ ...checked(), package: 'other' }), runImpl: () => assert.fail('Unverified package must not run npm') }), /could not be verified/);
@@ -213,10 +216,10 @@ test('maintenance argument syntax rejects misplaced flags and preserves help col
 
 test('maintenance CLI commands work without a Smolish login and produce clean structured output', async t => {
   const directory = await temporary(t);
-  const names = ['SMOP_HOME', 'SMOP_CONFIG', 'SMOP_COOKIE', 'SMOP_COOKIE_FILE', 'SMUP_HOME', 'SMUP_CONFIG', 'SMUP_COOKIE', 'SMUP_COOKIE_FILE'];
+  const names = ['SMOLUP_HOME', 'SMOLUP_CONFIG', 'SMOLUP_COOKIE', 'SMOLUP_COOKIE_FILE', 'SMOP_HOME', 'SMUP_HOME', 'SMOP_CONFIG', 'SMUP_CONFIG', 'SMOP_COOKIE', 'SMUP_COOKIE', 'SMOP_COOKIE_FILE', 'SMUP_COOKIE_FILE'];
   const previous = Object.fromEntries(names.map(name => [name, process.env[name]]));
   for (const name of names) delete process.env[name];
-  process.env.SMOP_HOME = directory;
+  process.env.SMOLUP_HOME = directory;
   t.after(() => {
     for (const [name, value] of Object.entries(previous)) {
       if (value === undefined) delete process.env[name]; else process.env[name] = value;
