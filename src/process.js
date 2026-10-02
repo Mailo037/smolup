@@ -9,8 +9,12 @@ export function windowsPowerShellEnv(extra = {}) {
 
 export function run(file, args, { signal, input, env, onStderr } = {}) {
   return new Promise((resolve, reject) => {
+    const childEnv = { ...(env || process.env) };
+    for (const key of Object.keys(childEnv)) {
+      if (/^(?:smolup|smop|smup)_cookie(?:_file)?$/i.test(key)) delete childEnv[key];
+    }
     const child = spawn(file, args, {
-      shell: false, windowsHide: true, signal, env: env || process.env,
+      shell: false, windowsHide: true, signal, env: childEnv,
       stdio: ['pipe', 'pipe', 'pipe'],
     });
     let stdout = '', stderr = '';

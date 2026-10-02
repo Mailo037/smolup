@@ -192,6 +192,10 @@ export async function repairTools({ signal, backend, runImpl = run, onStatus = (
   if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 60_000) throw new Error('Invalid media tool timeout.');
   const veo = backend || await import('veodl/src/backend.js');
   const tools = await veo.resolveBackend({ signal, onStatus });
+  const damagedMedia = report => ['ffmpeg', 'ffprobe'].some(name => report[name]?.source === 'cache' && report[name].verified === false);
+  if (damagedMedia(await veo.inspectBackend({ signal }))) {
+    throw new Error(`Cached media tools failed SHA-256 verification. Run ${COMMAND} doctorfix before retrying.`);
+  }
   const suffix = process.platform === 'win32' ? '.exe' : '';
   const checks = [];
   for (const [name, file, args] of [
@@ -217,7 +221,7 @@ export async function repairTools({ signal, backend, runImpl = run, onStatus = (
   }
   const report = await veo.inspectBackend({ signal });
   if (report.errors.length || !report.ytDlp.present || !report.ffmpeg.present || !report.ffprobe.present
-    || ['managed', 'installed'].includes(report.ytDlp.source) && !report.ytDlp.verified) {
+    || ['managed', 'installed'].includes(report.ytDlp.source) && !report.ytDlp.verified || damagedMedia(report)) {
     throw new Error(`VEO repaired its tools, but the final backend inspection still needs attention. Run ${COMMAND} doctor for details.`);
   }
   return { status: 'repaired', ready: true, backendRelease: report.release, checks };

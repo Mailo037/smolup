@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.1
+
+- Reject cached media tools that VEO reports as failing SHA-256 verification, including before diagnostic probes.
+- Pin VEO 1.12.1, removing the optional FFmpeg npm dependency tree and its installation scripts. Native media downloads use fixed upstream releases, exact byte counts and SHA-256 checks before execution.
+- Preserve upstream media-tool licenses and keep existing Windows, Linux and macOS tool resolution.
+- Remove current and legacy Smolish cookie environment variables from every subprocess, including FFmpeg and FFprobe.
+- Document the Socket findings in the published 0.4.0 dependency tree and the remaining expected uploader capabilities.
+
 ## 0.4.0
 
 - Publish the first public `smolup` npm release and `Mailo037/smolup` GitHub repository.

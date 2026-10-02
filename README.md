@@ -30,7 +30,9 @@ npm link
 smolup --help
 ```
 
-smolup uses [VEO](https://github.com/Mailo037/veodl) (`veodl` 1.12.0) to download links and resolve FFmpeg and FFprobe. Existing VEO media tools are reused; missing tools are prepared when needed. The VEO version is pinned because smolup also uses its tool resolution and terminal formatting.
+smolup uses [VEO](https://github.com/Mailo037/veodl) (`veodl` 1.12.1) to download links and resolve FFmpeg and FFprobe. Managed media tools are verified against fixed SHA-256 hashes before reuse; missing or invalid tools are prepared when needed. Trusted system tools and explicit path overrides are supported. The VEO version is pinned because smolup also uses its tool resolution and terminal formatting.
+
+See [dependency security](docs/SECURITY.md) for the Socket findings in 0.4.0 and their correction in 0.4.1.
 
 ## Account setup
 

@@ -301,9 +301,12 @@ export async function main(args = process.argv.slice(2), dependencies = {}) {
       let credentials;
       try { credentials = await loadAuth(); checks.push({ name: 'Cookie', status: 'ok', detail: 'Available; use --online to verify sign-in' }); }
       catch (error) { checks.push({ name: 'Cookie', status: 'missing', detail: error.message }); }
-      const backend = await step('Inspecting VEO tools', () => inspectBackend({ signal }));
+      const backend = await step('Inspecting VEO tools', () => (dependencies.inspectBackend || inspectBackend)({ signal }));
       for (const name of ['ytDlp', 'ffmpeg', 'ffprobe']) {
-        const damaged = name === 'ytDlp' && backend[name].present && ['managed', 'installed'].includes(backend[name].source) && !backend[name].verified;
+        const tool = backend[name];
+        const damaged = name === 'ytDlp'
+          ? tool.present && ['managed', 'installed'].includes(tool.source) && !tool.verified
+          : tool.source === 'cache' && tool.verified === false;
         checks.push({ name, status: damaged ? 'failed' : backend[name].present ? 'ok' : 'pending',
           detail: damaged ? 'Cached tool failed verification. Run smolup doctorfix.' : backend[name].path || 'Installed automatically on first use' });
       }
