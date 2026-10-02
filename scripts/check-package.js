@@ -30,8 +30,18 @@ try {
   const files = packed.files.map(file => file.path);
   for (const required of ['bin/smolup.js', 'src/bootstrap.js', 'src/maintenance.js', 'LICENSE', 'docs/PUBLISHING.md']) assert.ok(files.includes(required), required);
   for (const file of files) assert.doesNotMatch(file, /(?:^|\/)(?:auth\.json|\.npmrc|\.env[^/]*|node_modules|\.reference|\.test-output|test|state)(?:\/|$)|\.(?:mp4|mov|webm|mkv|log|tmp)$/i);
-  await callNpm(['install', '--global=false', '--prefix', prefix, path.join(directory, packed.filename), '--omit=optional', '--ignore-scripts', '--no-audit', '--no-fund']);
+  await callNpm(['install', '--global=false', '--prefix', prefix, path.join(directory, packed.filename), '--ignore-scripts', '--no-audit', '--no-fund']);
   const installed = path.join(prefix, 'node_modules', ...PACKAGE_NAME.split('/'));
+  const installedRequire = createRequire(path.join(installed, 'package.json'));
+  const veoPackage = JSON.parse(await readFile(installedRequire.resolve('veodl/package.json'), 'utf8'));
+  const packageMetadata = JSON.parse(await readFile(path.join(installed, 'package.json'), 'utf8'));
+  assert.equal(veoPackage.version, packageMetadata.dependencies.veodl, 'The installed VEO version must match the exact release pin.');
+  assert.equal(Object.keys(veoPackage.dependencies || {}).length, 0, 'VEO must have no transitive runtime npm dependencies.');
+  assert.equal(Object.keys(veoPackage.optionalDependencies || {}).length, 0, 'VEO must not restore the optional media installer tree.');
+  const dependencyTree = JSON.parse((await callNpm(['ls', '--global=false', '--prefix', prefix, '--all', '--json'])).stdout);
+  assert.deepEqual(Object.keys(dependencyTree.dependencies), [PACKAGE_NAME]);
+  assert.deepEqual(Object.keys(dependencyTree.dependencies[PACKAGE_NAME].dependencies), ['veodl']);
+  assert.equal(Object.keys(dependencyTree.dependencies[PACKAGE_NAME].dependencies.veodl.dependencies || {}).length, 0);
   const cli = path.join(installed, 'bin', 'smolup.js');
   const execute = args => run(process.execPath, [cli, ...args], { env, signal: AbortSignal.timeout(180_000) });
   const json = async (args, expected = 0) => {
@@ -73,7 +83,7 @@ try {
   assert.equal((await json(['jobs', prepared.jobId])).job.id, prepared.jobId);
   assert.equal(JSON.parse(await readFile(path.join(installed, 'package.json'), 'utf8')).name, PACKAGE_NAME);
   console.log(JSON.stringify({ status: 'passed', package: PACKAGE_NAME, version: VERSION, files: files.length,
-    installedHelpColors: true, shortJobId: prepared.jobId, missingVeoRepair: true }));
+    installedHelpColors: true, shortJobId: prepared.jobId, missingVeoRepair: true, transitiveRuntimeDependencies: 0 }));
 } finally {
   assert.equal(path.dirname(directory), temporaryRoot);
   assert.ok(path.basename(directory).startsWith('smolup-package-'));

@@ -214,6 +214,54 @@ test('maintenance argument syntax rejects misplaced flags and preserves help col
   }
 });
 
+test('doctor fix never probes cached media that failed verification and rechecks after probes', async () => {
+  for (const broken of ['ffmpeg', 'ffprobe']) {
+    const damaged = backend();
+    const inspect = damaged.inspectBackend;
+    damaged.inspectBackend = async () => {
+      const report = await inspect();
+      report[broken] = { source: 'cache', present: true, verified: false };
+      return report;
+    };
+    await assert.rejects(repairTools({ backend: damaged,
+      runImpl: async () => assert.fail('Unverified media must not run') }), /SHA-256 verification/);
+  }
+  const altered = backend();
+  const inspect = altered.inspectBackend;
+  let inspections = 0;
+  altered.inspectBackend = async () => {
+    const report = await inspect();
+    if (++inspections > 1) report.ffprobe = { source: 'cache', present: true, verified: false };
+    return report;
+  };
+  await assert.rejects(repairTools({ backend: altered, runImpl: async file => {
+    const name = path.basename(file).replace(/\.exe$/, '');
+    return { code: 0, stdout: name === 'yt-dlp' ? '2026.08.19' : `${name} version 8.0`, stderr: '' };
+  } }), /final backend inspection/);
+});
+
+test('doctor reports corrupt cached media as failed instead of ready or awaiting installation', async t => {
+  const directory = await temporary(t);
+  const previous = process.env.SMOLUP_HOME;
+  process.env.SMOLUP_HOME = directory;
+  t.after(() => { if (previous === undefined) delete process.env.SMOLUP_HOME; else process.env.SMOLUP_HOME = previous; });
+  let output = '';
+  const code = await main(['doctor', '--json'], {
+    stdout: { isTTY: false, write: value => { output += value; } },
+    stderr: { isTTY: false, write() {} },
+    inspectBackend: async () => ({ errors: [], ytDlp: { source: 'managed', present: true, verified: true },
+      ffmpeg: { source: 'cache', present: false, verified: false },
+      ffprobe: { source: 'cache', present: true, verified: false } }),
+  });
+  assert.equal(code, 1);
+  const result = JSON.parse(output);
+  for (const name of ['ffmpeg', 'ffprobe']) {
+    const check = result.checks.find(check => check.name === name);
+    assert.equal(check.status, 'failed');
+    assert.match(check.detail, /failed verification/);
+  }
+});
+
 test('maintenance CLI commands work without a Smolish login and produce clean structured output', async t => {
   const directory = await temporary(t);
   const names = ['SMOLUP_HOME', 'SMOLUP_CONFIG', 'SMOLUP_COOKIE', 'SMOLUP_COOKIE_FILE', 'SMOP_HOME', 'SMUP_HOME', 'SMOP_CONFIG', 'SMUP_CONFIG', 'SMOP_COOKIE', 'SMUP_COOKIE', 'SMOP_COOKIE_FILE', 'SMUP_COOKIE_FILE'];
