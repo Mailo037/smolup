@@ -14,7 +14,7 @@ New uploads are **Private** by default. The title is exactly one ordinary space 
 
 ## Install
 
-Requires Node.js 22 or newer on Windows, Linux or macOS. After the first npm publication:
+Requires Node.js 22 or newer on Windows, Linux or macOS. Install from npm:
 
 ```sh
 npm install --global smolup

@@ -7,8 +7,8 @@ The aliases `smush`, `smop` and `smup` invoke the same CLI.
 Name lookups and dry runs do not guarantee npm acceptance; only a successful
 publication confirms that the release is available.
 
-The first release is prepared as `0.4.0` and has not been published. Authenticate
-and publish from the repository checkout:
+The first release, `0.4.0`, is published on npm. For another release, update the
+version and changelog, then authenticate and publish from the repository checkout:
 
 ```powershell
 npm login --auth-type=web
