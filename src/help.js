@@ -1,4 +1,18 @@
-export const HELP = `smolup — download, trim and manage Smolish videos
+// Align command and option descriptions into one column per section.
+function alignColumns(text) {
+  const row = /^(\s+)((?:smolup|smush|-)\S*(?: \S+)*?)\s{2,}(\S.*)$/;
+  return text.split(/\n(?=\S|\n)/).map(section => {
+    const lines = section.split('\n');
+    const width = Math.max(0, ...lines.map(line => row.exec(line)).filter(Boolean)
+      .map(([, indent, syntax]) => indent.length + syntax.length));
+    return lines.map(line => {
+      const match = row.exec(line);
+      return match ? `${(match[1] + match[2]).padEnd(width)}  ${match[3]}` : line;
+    }).join('\n');
+  }).join('\n');
+}
+
+export const HELP = alignColumns(`smolup — download, trim and manage Smolish videos
 
 Usage:
   smolup <URL or file> [options]          Download with VEO, trim and upload
@@ -77,7 +91,7 @@ Output:
 Defaults < active/selected preset < explicit flags. New uploads are Private.
 Storage checks use account values. Smolish enforces limits even with --try-anyway.
 The original file is preserved. Progress goes to stderr; results go to stdout.
-`;
+`);
 
 export const COMMAND_HELP = {
   setup: `smolup setup [--no-color]
