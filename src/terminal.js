@@ -2,9 +2,29 @@ import { terminalText } from 'veodl/src/progress.js';
 import { cleanText } from 'veodl/src/utils.js';
 
 const ANSI = {
-  muted: '90', body: '37', title: '1', heading: '1;36', command: '36', flag: '33',
-  value: '35', number: '94', profile: '97', success: '32', warning: '33', error: '31', prompt: '1;33',
+  muted: '90', body: '39', title: '1', heading: '1;36', command: '36', flag: '33',
+  value: '35', number: '94', profile: '39', success: '32', warning: '33', error: '31', prompt: '1;33',
 };
+
+const SPINNER = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+const ASCII_SPINNER = ['|', '/', '-', '\\'];
+const BAR_WIDTH = 20;
+const NUMERIC = /^-?\d+(?:[.,]\d+)?(?:\s?(?:B|KiB|MiB|GiB|%|s))?$/;
+
+export function formatBytes(bytes) {
+  const units = ['B', 'KiB', 'MiB', 'GiB', 'TiB'];
+  let value = Math.max(0, Number(bytes) || 0), unit = 0;
+  while (value >= 1024 && unit < units.length - 1) { value /= 1024; unit++; }
+  return unit === 0 ? `${value} B` : `${value.toFixed(value < 10 ? 2 : 1)} ${units[unit]}`;
+}
+
+export function formatDuration(seconds) {
+  const total = Math.max(0, Math.ceil(seconds));
+  const h = Math.floor(total / 3600), m = Math.floor(total % 3600 / 60), s = total % 60;
+  if (h) return `${h}h ${String(m).padStart(2, '0')}m`;
+  if (m) return `${m}m ${String(s).padStart(2, '0')}s`;
+  return `${s}s`;
+}
 
 // Keep indentation and newlines, while never trusting incoming terminal escapes.
 function safeText(value) {
@@ -22,6 +42,9 @@ export function createTerminal({ json = false, color = true, forceColor = false,
     if (Object.hasOwn(env, 'FORCE_COLOR')) return !['0', 'false'].includes(String(env.FORCE_COLOR).toLowerCase());
     return Boolean(stream.isTTY) && env.TERM !== 'dumb';
   };
+  // Legacy Windows consoles lack braille glyphs; Windows Terminal and VS Code have them.
+  const unicode = process.platform !== 'win32' || Boolean(env.WT_SESSION || env.TERM_PROGRAM || env.ConEmuANSI);
+  const spinner = unicode ? SPINNER : ASCII_SPINNER;
   let active, timer, frame = 0;
   // Sanitize before painting: cleaning generated ANSI would erase our colors.
   const paint = (stream, text, role = 'body') => colors(stream) && text ? `\x1b[${ANSI[role] || ANSI.body}m${text}\x1b[0m` : text;
@@ -51,14 +74,30 @@ export function createTerminal({ json = false, color = true, forceColor = false,
   const clear = () => { if (interactive && active) stderr.write('\r\x1b[2K'); };
   const draw = () => {
     if (!interactive || !active) return;
-    const plain = terminalText(stderr, `${active.label}${active.detail ? `  ${active.detail}` : '.'.repeat(frame++ % 3 + 1)}`);
-    const label = plain.slice(0, Math.min(plain.length, active.label.length));
-    stderr.write(`\r\x1b[2K${styled(stderr, label, 'command')}${tokens(stderr, plain.slice(label.length), 'muted')}`);
+    const width = Math.max(1, (stderr.columns || 80) - 1);
+    const showBar = active.percent !== undefined && width >= 70;
+    const segments = [
+      [`${spinner[frame % spinner.length]} `, 'command'],
+      [active.label, 'command'],
+    ];
+    if (showBar) {
+      const filled = Math.round(active.percent / 100 * BAR_WIDTH);
+      segments.push(['  ', 'muted'], ['█'.repeat(filled), 'command'], ['░'.repeat(BAR_WIDTH - filled), 'muted']);
+    }
+    segments.push([active.detail ? `  ${active.detail}` : '', 'tokens']);
+    const plain = terminalText(stderr, segments.map(([text]) => text).join(''));
+    let rest = plain, line = '';
+    for (const [text, role] of segments) {
+      const part = rest.slice(0, text.length);
+      rest = rest.slice(part.length);
+      line += role === 'tokens' ? tokens(stderr, part, 'muted') : styled(stderr, part, role);
+    }
+    stderr.write(`\r\x1b[2K${line}`);
   };
+  const tick = () => { frame++; draw(); };
   const stop = () => { clearInterval(timer); timer = undefined; clear(); active = undefined; };
   const write = (stream, text) => { clear(); stream.write(`${text}\n`); draw(); };
   const output = (text, role = 'body') => write(stdout, tokens(stdout, text, role));
-  const formatBytes = bytes => `${(bytes / 1048576).toFixed(1)} MiB`;
   return {
     output,
     label(label, value, role = 'value') {
@@ -92,14 +131,14 @@ export function createTerminal({ json = false, color = true, forceColor = false,
       finally {
         if (previous) {
           active = previous;
-          if (interactive) { draw(); timer = setInterval(draw, 350); timer.unref(); }
+          if (interactive) { draw(); timer = setInterval(tick, 100); timer.unref(); }
         }
       }
     },
     async step(label, work) {
       stop();
       active = { label: cleanText(label) };
-      if (interactive) { draw(); timer = setInterval(draw, 350); timer.unref(); }
+      if (interactive) { draw(); timer = setInterval(tick, 100); timer.unref(); }
       else stderr.write(`${styled(stderr, `${active.label}…`, 'command')}\n`);
       try {
         const value = await work();
@@ -115,9 +154,10 @@ export function createTerminal({ json = false, color = true, forceColor = false,
     progress(bytes, total, timing) {
       if (!active) return;
       const percent = total > 0 ? Math.max(0, Math.min(100, Math.floor(bytes / total * 100))) : 0;
+      active.percent = percent;
       const elapsed = Math.max(0.001, (Date.now() - timing.started) / 1000);
       const speed = Math.max(0, bytes - timing.initial) / elapsed;
-      const eta = speed > 0 ? `${Math.max(0, Math.ceil((total - bytes) / speed))}s` : '?';
+      const eta = speed > 0 ? formatDuration((total - bytes) / speed) : '?';
       active.detail = `${percent}%  ${formatBytes(bytes)} / ${formatBytes(total)}  ${formatBytes(speed)}/s  ETA ${eta}`;
       if (interactive) draw();
       else if (percent === 100 || !timing.lastLog || Date.now() - timing.lastLog > 5000) {
@@ -127,7 +167,11 @@ export function createTerminal({ json = false, color = true, forceColor = false,
     download(line) {
       if (!active || !interactive) return;
       const text = cleanText(line);
-      if (/\d+%|received; processing|^(?:Preparing|Checking|Loading|Processing)/i.test(text)) { active.detail = text; draw(); }
+      if (/\d+%|received; processing|^(?:Preparing|Checking|Loading|Processing)/i.test(text)) {
+        const percent = /(\d+(?:\.\d+)?)%/.exec(text);
+        if (percent) active.percent = Math.max(0, Math.min(100, Number(percent[1])));
+        active.detail = text; draw();
+      }
     },
     json(data) { clear(); stdout.write(`${JSON.stringify({ schemaVersion: 1, ...data })}\n`); draw(); },
     object(data) {
@@ -149,12 +193,16 @@ export function createTerminal({ json = false, color = true, forceColor = false,
       const titles = headers.map(value => cleanText(String(value)));
       const values = rows.map(row => titles.map((_, i) => cleanText(String(row[i] ?? ''))));
       const widths = titles.map((title, i) => Math.min(i === titles.length - 1 ? 48 : 36, values.reduce((width, row) => Math.max(width, row[i].length), title.length)));
+      const numeric = titles.map((_, i) => values.some(row => row[i]) && values.every(row => !row[i] || NUMERIC.test(row[i])));
       const render = (row, heading) => row.map((value, i) => {
         const fitted = value.length > widths[i] ? `${value.slice(0, widths[i] - 1)}…` : value;
         const role = heading ? 'heading' : statusRole(value, i === 0 ? 'command' : i % 2 ? 'value' : 'profile');
-        return styled(stdout, fitted, role) + (i === row.length - 1 ? '' : ' '.repeat(Math.max(0, widths[i] - fitted.length)));
+        const padding = ' '.repeat(Math.max(0, widths[i] - fitted.length));
+        if (numeric[i]) return padding + styled(stdout, fitted, role);
+        return styled(stdout, fitted, role) + (i === row.length - 1 ? '' : padding);
       }).join('  ');
       write(stdout, render(titles, true));
+      write(stdout, paint(stdout, widths.map(width => '─'.repeat(width)).join('  '), 'muted'));
       for (const row of values) write(stdout, render(row, false));
     },
     close() { stop(); },

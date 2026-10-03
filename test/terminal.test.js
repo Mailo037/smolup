@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createTerminal } from '../src/terminal.js';
+import { createTerminal, formatBytes, formatDuration } from '../src/terminal.js';
 import { HELP, COMMAND_HELP } from '../src/help.js';
 
 const strip = text => text.replace(/\x1b\[[0-?]*[ -/]*[@-~]/g, '');
@@ -97,7 +97,7 @@ test('table colors preserve visible cell alignment and color status and metrics 
     ['abc123', 'ready', 12, 'Long clip'], ['z9y8x7', 'failed', 3, 'Short'],
   ]);
   terminal.close();
-  assert.equal(strip(stdout.text), 'Job     Status  Views  Title\nabc123  ready   12     Long clip\nz9y8x7  failed  3      Short\n');
+  assert.equal(strip(stdout.text), 'Job     Status  Views  Title\n──────  ──────  ─────  ─────────\nabc123  ready      12  Long clip\nz9y8x7  failed      3  Short\n');
   assert.match(stdout.text, /\x1b\[36mabc123/);
   assert.match(stdout.text, /\x1b\[32mready/);
   assert.match(stdout.text, /\x1b\[31mfailed/);
@@ -144,4 +144,24 @@ test('interactive transfer retains colored in-place redraws and final status', a
   assert.match(stderr.text, /\x1b\[94m50/);
   assert.match(stderr.text, /\x1b\[32mdone/);
   assert.equal(strip(stderr.text).split('\n').filter(line => line.includes('Uploading clip')).length, 1);
+});
+
+test('interactive progress draws a spinner and a bar sized to the percentage', async () => {
+  const { terminal, stderr } = terminalFor({ isTTY: true });
+  await terminal.step('Uploading clip', async () => {
+    terminal.progress(5, 10, { started: Date.now() - 1000, initial: 0 });
+  });
+  terminal.close();
+  const drawn = strip(stderr.text);
+  assert.match(drawn, /[⠋|] Uploading clip  █{10}░{10}  50%/);
+});
+
+test('byte sizes and durations pick readable units', () => {
+  assert.equal(formatBytes(512), '512 B');
+  assert.equal(formatBytes(1536), '1.50 KiB');
+  assert.equal(formatBytes(30 * 1048576), '30.0 MiB');
+  assert.equal(formatBytes(2.5 * 1024 ** 3), '2.50 GiB');
+  assert.equal(formatDuration(9.2), '10s');
+  assert.equal(formatDuration(754), '12m 34s');
+  assert.equal(formatDuration(3720), '1h 02m');
 });
